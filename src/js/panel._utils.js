@@ -854,6 +854,21 @@ window.Widgets.Events = window.Widgets.Events || {};
                 }
             });
 
+            if (ns.split.scratch.nodes.length === 0 && nodes.length > 0) {
+                console.warn("No scratch nodes identified via promotable split; falling back to full dataset for scratch panel");
+                ns.split.scratch.nodes = nodes.slice();
+                ns.split.scratch.edges = edges.map(function(edge) {
+                    const normalizedEdge = Object.assign({}, edge);
+                    if (typeof normalizedEdge.source === 'string') {
+                        normalizedEdge.source = nodeRef[normalizedEdge.source];
+                    }
+                    if (typeof normalizedEdge.target === 'string') {
+                        normalizedEdge.target = nodeRef[normalizedEdge.target];
+                    }
+                    return normalizedEdge;
+                });
+            }
+
         } catch (error) {
             console.error("Error in processGraphData", error);
         } finally {

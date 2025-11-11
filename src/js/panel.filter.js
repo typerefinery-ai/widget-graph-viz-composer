@@ -57,6 +57,26 @@ window.Widgets.Panel.Filter = {};
 
         });
 
+        $filter_options.on('click', function() {
+            console.group(`Widgets.Panel.Filter filter.click on ${window.location}`);
+            try {
+                const filterValue = this.value;
+                const type = window.Widgets.Panel.Utils.options.tree_data[filterValue];
+                const currentType = window.Widgets.Panel.Tree.currentTreeType;
+
+                if (type && currentType && type === currentType) {
+                    console.log(`filter.click forcing refresh for current type: ${type}`);
+                    window.Widgets.Panel.Tree.updateTree(type);
+                } else {
+                    console.log("filter.click detected new type, no forced refresh", { type, currentType });
+                }
+            } catch (error) {
+                console.error("Error in filter.click handler", error);
+            } finally {
+                console.groupEnd();
+            }
+        });
+
         let $theme_options = $component.find('#theme_options input[type=radio]');
 
         $theme_options.on('change', function (d) {

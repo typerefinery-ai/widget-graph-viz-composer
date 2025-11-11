@@ -144,8 +144,22 @@ window.Widgets.Widget = {};
         console.group(`Load Data on ${window.location}`);
         console.log(data);
 
+        let graphData = data;
+        if (!graphData || typeof graphData !== "object") {
+            console.warn("loadData received invalid data payload, creating default graph");
+            graphData = ns.createDefaultGraphData({ name: "Unknown Data" });
+        } else if (!graphData.nodes || !graphData.edges) {
+            if (graphData.children && Array.isArray(graphData.children)) {
+                console.log("loadData detected tree structure, converting to graph");
+                graphData = ns.convertTreeToGraph(graphData);
+            } else {
+                console.log("loadData creating default graph representation for payload");
+                graphData = ns.createDefaultGraphData(graphData);
+            }
+        }
+
         //TODO: clear existing data and visuals in tree
-        panelUtilsNs.processGraphData(data);
+        panelUtilsNs.processGraphData(graphData);
 
         //TODO: clear existing data and visuals in promo
         panelPromoNs.simGraph()

@@ -42,8 +42,9 @@ window.Widgets.Events = {};
                         throw new Error('no sourceData');
                     }
                     if (callback) {
-                        console.log('callback', callback);
+                        console.log('calling callback', callback);
                         callback(sourceData);
+                        console.log('callback called', callback);
                     }
                 } else {
                     console.warn('no eventData');
@@ -118,8 +119,9 @@ window.Widgets.Events = {};
                             throw new Error('no sourceData');
                         }
                         if (callback) {
-                            console.log('callback', callback);
+                            console.log('calling callback', callback);
                             callback(sourceData);
+                            console.log('callback called', callback);
                         }
                     } else {
                         console.log('ignoring, not for this event', type);
@@ -175,8 +177,9 @@ window.Widgets.Events = {};
                     return;
                 }
                 if (callback) {
-                    console.log('callback', callback);
+                    console.log('calling callback', callback);
                     callback(sourceData);
+                    console.log('callback called', callback);
                 }
             } else {
                 console.warn('no eventData');
@@ -275,8 +278,23 @@ window.Widgets.Events = {};
         let eventType = event.type;
         let eventSource = event.source;
         let eventOrigin = event.origin;
-        let eventData = event.data;
-        console.log(["eventType", eventType, "eventSource", eventSource, "eventOrigin", eventOrigin, "eventData", eventData]);
+        let eventDataRaw = event.data;
+        console.log(["eventType", eventType, "eventSource", eventSource, "eventOrigin", eventOrigin, "eventData", eventDataRaw]);
+
+        let eventData = eventDataRaw;
+        if (typeof eventDataRaw === 'string') {
+            try {
+                eventData = JSON.parse(eventDataRaw);
+            } catch (parseError) {
+                console.error("Failed to parse event data payload", parseError);
+                console.groupEnd();
+                return;
+            }
+        } else if (!eventDataRaw || typeof eventDataRaw !== 'object') {
+            console.warn("eventListenerHandler encountered unsupported event data shape", eventDataRaw);
+            console.groupEnd();
+            return;
+        }
 
         let sourceWindow = event.source;
         let sourceOrigin = event.origin;
@@ -295,9 +313,6 @@ window.Widgets.Events = {};
             console.log(["sourceWindow", sourceWindow, "sourceOrigin", sourceOrigin, "eventData", eventData]);
 
             let sourceData = eventData;
-            if (typeof eventData === 'string') {
-              sourceData = JSON.parse( eventData );
-            }
 
             if (sourceData) {
                 console.log(["sourceData", sourceData]);

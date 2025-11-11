@@ -1,3 +1,5 @@
+/* global cy, describe, beforeEach, it, expect */
+
 describe("Context Menu Interactions", () => {
   beforeEach(() => {
     cy.visit("http://localhost:4001/?local=true");
@@ -38,31 +40,95 @@ describe("Context Menu Interactions", () => {
       cy.get(".scm-container").should("contain", "Edit DAG");
     });
 
-    it("should execute Copy action when clicked", () => {
-      // Spy on console.log to verify action execution
+    it("should execute Copy workflow with event, notification, and refresh", () => {
       cy.window().then((win) => {
-        cy.spy(win.console, "log").as("consoleLog");
+        const originalPostMessage = win.parent.postMessage.bind(win.parent);
+        cy.stub(win.parent, "postMessage")
+          .callsFake((message, target) => {
+            const parsedMessage = typeof message === "string" ? JSON.parse(message) : message;
+            if (parsedMessage?.type === "embed-tree-copy") {
+              setTimeout(() => {
+                const responsePayload = {
+                  type: "embed-tree-copy",
+                  payload: {
+                    status: "success",
+                    action: parsedMessage.payload?.action,
+                    data: {
+                      treeType: parsedMessage.payload?.data?.treeType,
+                    },
+                  },
+                  target: "widget",
+                };
+                originalPostMessage(JSON.stringify(responsePayload), target);
+              }, 0);
+            }
+          })
+          .as("postMessage");
+        cy.stub(win.Widgets.Panel.Utils, "showNotification")
+          .callThrough()
+          .as("showNotification");
+        cy.spy(win.Widgets.Panel.Tree, "loadTreeDataFromAPI").as("loadTreeDataFromAPI");
       });
-      
-      // Wait for tree data to load
+
       cy.get("#tree_panel").should("contain", "Sighting");
-      
-      // Right-click on the <image> inside the first g.node
       cy.get("#tree_panel svg g.node").first().find("image").rightclick({ force: true });
-      
-      // Click Copy option
       cy.get(".scm-container").contains("Copy").click();
-      
-      // Verify action was executed
-      cy.get("@consoleLog").should("have.been.calledWith", "copy selected");
+
+      cy.get("@postMessage").should("have.been.called");
+      cy.get("@postMessage").then((stub) => {
+        const call = stub.getCall(0);
+        const payload = JSON.parse(call.args[0]);
+        expect(payload.type).to.equal("embed-tree-copy");
+      });
+
+      cy.get("@showNotification").should((stub) => {
+        const loadingCallFound = stub
+          .getCalls()
+          .some((call) => call.args[0] === "loading" && typeof call.args[1] === "string" && call.args[1].includes("Copying tree node"));
+        expect(loadingCallFound, "loading notification for copy").to.be.true;
+
+        const successCallFound = stub
+          .getCalls()
+          .some((call) => call.args[0] === "success");
+        expect(successCallFound, "success notification for copy").to.be.true;
+      });
+
+      cy.wait(50);
+      cy.get("@loadTreeDataFromAPI").should((spy) => {
+        expect(spy.callCount).to.be.greaterThan(0);
+      });
     });
 
-    it("should execute Edit DAG action when clicked", () => {
-      // Spy on console.log to verify action execution
+    it("should execute Edit DAG workflow with event, notification, and refresh", () => {
       cy.window().then((win) => {
-        cy.spy(win.console, "log").as("consoleLog");
+        const originalPostMessage = win.parent.postMessage.bind(win.parent);
+        cy.stub(win.parent, "postMessage")
+          .callsFake((message, target) => {
+            const parsedMessage = typeof message === "string" ? JSON.parse(message) : message;
+            if (parsedMessage?.type === "embed-tree-edit-dag") {
+              setTimeout(() => {
+                const responsePayload = {
+                  type: "embed-tree-edit-dag",
+                  payload: {
+                    status: "success",
+                    action: parsedMessage.payload?.action,
+                    data: {
+                      treeType: parsedMessage.payload?.data?.treeType,
+                    },
+                  },
+                  target: "widget",
+                };
+                originalPostMessage(JSON.stringify(responsePayload), target);
+              }, 0);
+            }
+          })
+          .as("postMessage");
+        cy.stub(win.Widgets.Panel.Utils, "showNotification")
+          .callThrough()
+          .as("showNotification");
+        cy.spy(win.Widgets.Panel.Tree, "loadTreeDataFromAPI").as("loadTreeDataFromAPI");
       });
-      
+
       // Wait for tree data to load
       cy.get("#tree_panel").should("contain", "Sighting");
       
@@ -72,8 +138,29 @@ describe("Context Menu Interactions", () => {
       // Click Edit DAG option
       cy.get(".scm-container").contains("Edit DAG").click();
       
-      // Verify action was executed
-      cy.get("@consoleLog").should("have.been.calledWith", "edit dag selected");
+      cy.get("@postMessage").should("have.been.called");
+      cy.get("@postMessage").then((stub) => {
+        const call = stub.getCall(0);
+        const payload = JSON.parse(call.args[0]);
+        expect(payload.type).to.equal("embed-tree-edit-dag");
+      });
+
+      cy.get("@showNotification").should((stub) => {
+        const loadingCallFound = stub
+          .getCalls()
+          .some((call) => call.args[0] === "loading" && typeof call.args[1] === "string" && call.args[1].includes("Editing DAG"));
+        expect(loadingCallFound, "loading notification for edit DAG").to.be.true;
+
+        const successCallFound = stub
+          .getCalls()
+          .some((call) => call.args[0] === "success");
+        expect(successCallFound, "success notification for edit DAG").to.be.true;
+      });
+
+      cy.wait(50);
+      cy.get("@loadTreeDataFromAPI").should((spy) => {
+        expect(spy.callCount).to.be.greaterThan(0);
+      });
     });
   });
 

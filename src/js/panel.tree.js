@@ -2,27 +2,251 @@
 
 // panel.tree.js
 //define context menu functions
-window.Widgets.Widget = Widgets.Widget || {};
-window.Widgets.Panel.Tree = {}
+window.Widgets = window.Widgets || {};
+window.Widgets.Widget = window.Widgets.Widget || {};
+window.Widgets.Panel = window.Widgets.Panel || {};
+window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
 
-;(function ($, ns, d3, panelUtilsNs, document, window) {
+;(function ($, ns, d3, panelUtilsNs, eventsNs, document, window) {
 
     ns.selectorComponent = '#tree_panel';
 
     ns.options = {};
 
+    /**
+     * @typedef {Object} TreeMenuActionConfig
+     * @property {string} eventName Event name to raise towards parent.
+     * @property {string} loadingMessage Message displayed while waiting for parent response.
+     * @property {string} successMessage Message shown after a successful response.
+     * @property {string} errorMessage Message shown when the action fails.
+     */
+
+    /**
+     * Persist the last tree type used for refresh operations.
+     * @type {string | null}
+     */
+    ns.currentTreeType = panelUtilsNs?.options?.tree_data_default || null;
+
+    /**
+     * Centralised configuration for tree menu actions.
+     * @type {Record<"copy" | "editDag", TreeMenuActionConfig>}
+     */
+    ns.treeMenuActionConfig = {
+        copy: {
+            eventName: "embed-tree-copy",
+            loadingMessage: "Copying tree node...",
+            successMessage: "Tree node copied successfully",
+            errorMessage: "Failed to copy tree node",
+            onSuccess: function(context) {
+                console.log("Copy action successful", context);
+                ns.refreshTreeAfterMenuAction(context.treeType);
+            },
+            onError: function(context) {
+                console.warn("Copy action failed", context);
+            }
+        },
+        editDag: {
+            eventName: "embed-tree-edit-dag",
+            loadingMessage: "Editing DAG...",
+            successMessage: "DAG updated successfully",
+            errorMessage: "Failed to update DAG",
+            onSuccess: function(context) {
+                console.log("Edit DAG action successful", context); 
+                ns.refreshTreeAfterMenuAction(context.treeType);
+            },
+            onError: function(context) {
+                console.warn("Edit DAG action failed", context);
+            }
+        },
+    };
+
     ns.menuItems = [
         {
           label: "Copy",
           icon: '<i class="fa-regular fa-copy"></i>',
-          action: () => console.log("copy selected"),
+          action: () => {
+            ns.executeTreeMenuAction(ns.treeMenuActionConfig.copy);
+          },
         },
         {
           label: "Edit DAG",
           icon: '<i class="fa fa-code"></i>',
-          action: () => console.log("edit dag selected"),
+          action: () => {
+            ns.executeTreeMenuAction(ns.treeMenuActionConfig.editDag);
+          },
         },
     ];
+
+    /**
+     * Execute a context menu action for the currently selected tree node.
+     * @param {TreeMenuActionConfig} actionConfig Configuration for the menu action.
+     * @returns {void}
+     */
+    ns.executeTreeMenuAction = function(actionConfig) {
+        console.group(`Widgets.Panel.Tree.executeTreeMenuAction on ${window.location}`);
+        let timeoutId = null;
+        const callbackContext = {
+            treeType: "",
+            node: {},
+        };
+        try {
+            // Guard clause: validate action configuration
+            if (!actionConfig || typeof actionConfig.eventName !== "string") {
+                throw new Error("executeTreeMenuAction: invalid action configuration provided");
+            }
+
+            // Obtain context information for the node that opened the menu
+            const contextData = panelUtilsNs.getContentMenuData();
+            if (!contextData || !contextData.data) {
+                panelUtilsNs.showNotification("error", "No tree node selected for this action.");
+                return;
+            }
+
+            // Reset context menu tracking so future interactions can proceed
+            panelUtilsNs.contentMenuActive = false;
+            panelUtilsNs.contentMenuItem = null;
+
+            // Extract a safe payload containing only serialisable node properties
+            const nodeContext = contextData.data;
+            const nodeData = (nodeContext && typeof nodeContext.data === "object") ? nodeContext.data : {};
+            const originalData = (nodeData && typeof nodeData.original === "object") ? nodeData.original : nodeData;
+            const payloadNode = {
+                id: originalData?.id || nodeContext.id || "",
+                name: originalData?.name || nodeData?.name || "",
+                type: originalData?.type || nodeData?.type || "",
+                data: originalData || {},
+            };
+
+            // Determine the tree type to refresh after completion
+            const treeTypeToRefresh = ns.currentTreeType || panelUtilsNs?.options?.tree_data_default || "";
+            callbackContext.treeType = treeTypeToRefresh;
+            callbackContext.node = payloadNode;
+
+            if (callbackContext.treeType === "") {
+                throw new Error("executeTreeMenuAction: unable to determine tree type for refresh");
+            }
+
+            // Prepare event payload and metadata for the parent application
+            const componentId = `${actionConfig.eventName}::tree-panel`;
+            const payload = {
+                action: actionConfig.eventName,
+                id: componentId,
+                type: "tree_action",
+                data: {
+                    node: payloadNode,
+                    treeType: callbackContext.treeType,
+                },
+            };
+            const eventData = eventsNs.compileEventData(
+                payload,
+                actionConfig.eventName,
+                "BUTTON_CLICK",
+                componentId,
+                { treeType: callbackContext.treeType }
+            );
+
+            // Provide immediate feedback to the user
+            panelUtilsNs.showNotification("loading", actionConfig.loadingMessage);
+
+            // Set up timeout supervision to surface failures when parent does not respond
+            const actionTimeoutMs = 15000;
+            timeoutId = window.setTimeout(() => {
+                panelUtilsNs.showNotification("error", `${actionConfig.errorMessage}: parent response timed out`);
+                if (typeof actionConfig.onError === "function") {
+                    actionConfig.onError({
+                        reason: "timeout",
+                        treeType: callbackContext.treeType,
+                        node: callbackContext.node,
+                    });
+                }
+            }, actionTimeoutMs);
+
+            const invokeSuccessCallback = function() {
+                if (typeof actionConfig.onSuccess === "function") {
+                    actionConfig.onSuccess({
+                        treeType: callbackContext.treeType,
+                        node: callbackContext.node,
+                    });
+                }
+            };
+
+            const invokeErrorCallback = function(details) {
+                if (typeof actionConfig.onError === "function") {
+                    actionConfig.onError({
+                        treeType: callbackContext.treeType,
+                        node: callbackContext.node,
+                        errorMessage: details,
+                    });
+                }
+            };
+
+            /**
+             * Handle the parent response routed through the events namespace.
+             * @param {string} id Event controller identifier.
+             * @param {Record<string, unknown>} response Incoming payload from the parent.
+             */
+            const responseHandler = function(id, response) {
+                // Ensure we clean up timeout regardless of the outcome
+                window.clearTimeout(timeoutId);
+
+                // Dismiss any loading notifications before showing final status
+                if (typeof panelUtilsNs.dismissAllNotifications === "function") {
+                    panelUtilsNs.dismissAllNotifications();
+                }
+
+                const payloadResponse = response?.payload;
+                const status = typeof payloadResponse?.status === "string" ? payloadResponse.status : "unknown";
+                console.log("Tree menu action response status", {
+                    action: actionConfig.eventName,
+                    status: status,
+                    rawPayload: payloadResponse,
+                });
+                if (status === "success") {
+                    panelUtilsNs.showNotification("success", actionConfig.successMessage);
+                    invokeSuccessCallback();
+                } else {
+                    const errorDetail = payloadResponse?.message || actionConfig.errorMessage;
+                    panelUtilsNs.showNotification("error", errorDetail);
+                    invokeErrorCallback(errorDetail);
+                }
+            };
+
+            // Register listener before raising the event to avoid race conditions
+            eventsNs.registerEvent(actionConfig.eventName, eventsNs.eventListenerHandler, responseHandler);
+
+            // Raise the event so the parent application can process the request
+            eventsNs.raiseEvent(actionConfig.eventName, eventData);
+
+        } catch (error) {
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+            console.error("Error executing tree menu action", error);
+            panelUtilsNs.showNotification("error", error?.message || "Unexpected error executing tree menu action.");
+        } finally {
+            console.groupEnd();
+        }
+    };
+
+    /**
+     * Refresh tree data after the parent successfully completes an action.
+     * @param {string} treeType Type of tree data that should be reloaded.
+     * @returns {void}
+     */
+    ns.refreshTreeAfterMenuAction = function(treeType) {
+        console.group(`Widgets.Panel.Tree.refreshTreeAfterMenuAction on ${window.location}`);
+        try {
+            if (!treeType || typeof treeType !== "string") {
+                throw new Error("refreshTreeAfterMenuAction: treeType must be a non-empty string");
+            }
+            ns.updateTree(treeType);
+        } catch (error) {
+            console.error("Error refreshing tree after menu action", error);
+            panelUtilsNs.showNotification("error", "Unable to refresh tree after completing the action.");
+        } finally {
+            console.groupEnd();
+        }
+    };
 
     ns.getDataFromUrl = function(url) {
         console.groupCollapsed(`Widgets.Panel.Tree.loadData on ${window.location}`);
@@ -200,6 +424,9 @@ window.Widgets.Panel.Tree = {}
             
             // Hide tooltip before loading new data
             panelUtilsNs.hideTooltip();
+
+            // Remember the tree type so we can refresh after context menu actions
+            ns.currentTreeType = type;
             
             // Show loading state
             ns.showLoadingState(type);
@@ -918,4 +1145,4 @@ window.Widgets.Panel.Tree = {}
         return isLocal;
     }
 
-})(window.jQuery, window.Widgets.Panel.Tree, window.d3, window.Widgets.Panel.Utils, document, window)
+})(window.jQuery, window.Widgets.Panel.Tree, window.d3, window.Widgets.Panel.Utils, window.Widgets.Events, document, window)
