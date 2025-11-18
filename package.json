@@ -1,8 +1,8 @@
 {
-  "name": "template-iframe-widget",
+  "name": "os-triage-compose-iframe-widget",
   "version": "1.0.0",
-  "title": "Template iFrame Widget",
-  "description": "Template for creating widget to be used in iFrames.",
+  "title": "OS Triage Compose Widget",
+  "description": "OS Triage Compose Widget for creating and editing OS Triage data.",
   "main": "src/js/_index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack serve --progress --live-reload --config webpack.dev.js",
