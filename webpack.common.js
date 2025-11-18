@@ -10,7 +10,9 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const htmlBodyContent = fs.readFileSync(paths.src + '/html/content.html').toString();
 
-const htmlHeader = isDevelopment ? "<script src='http://localhost:35729/livereload.js'></script>" : "";
+// Use LIVERELOAD_PORT from environment variable, fallback to default 35729
+const livereloadPort = process.env.LIVERELOAD_PORT || 35730;
+const htmlHeader = isDevelopment ? `<script src='http://localhost:${livereloadPort}/livereload.js'></script>` : "";
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
@@ -168,9 +170,10 @@ module.exports = {
         ]
     }),
 
-    // auto reload the page using http://localhost:35729/livereload.js
+    // auto reload the page using http://localhost:${livereloadPort}/livereload.js
     // new LiveReloadPlugin({}),
     isDevelopment && new WebpackFileWatcherLiveReload({
+        port: parseInt(livereloadPort, 10),
         watchFiles: [
             './src/**/*',
             '!./src/*.test.js'

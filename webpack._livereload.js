@@ -57,7 +57,8 @@ class LiveReloadPlugin {
 
     validate(schema, options, {name: 'Livereload Plugin'});
 
-    this.defaultPort = 35729;
+    // Use LIVERELOAD_PORT from environment variable, fallback to default 35729
+    this.defaultPort = parseInt(process.env.LIVERELOAD_PORT || 35730, 10);
     this.options = Object.assign({
       protocol: '',
       port: this.defaultPort,
