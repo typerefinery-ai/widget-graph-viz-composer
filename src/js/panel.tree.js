@@ -261,7 +261,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
     };
 
     ns.getDataFromUrl = function(url) {
-        console.groupCollapsed(`Widgets.Panel.Tree.loadData on ${window.location}`);
+        console.groupCollapsed(`Widgets.Panel.Tree.getDataFromUrl on ${window.location}`);
         console.log('loading data from ' + url);
         
         if (!ns.options || !ns.options.tree_data) {

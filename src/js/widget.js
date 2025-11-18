@@ -125,6 +125,7 @@ window.Widgets.Widget = {};
                     return;
                 }
                 if (eventData.data) {
+                    console.log("Data received, calling loadData", eventData.data);
                     ns.loadData(eventData.data);
                     panelUtilsNs.showNotification('success', "Graph data loaded successfully");
                 } else {
@@ -141,7 +142,7 @@ window.Widgets.Widget = {};
     }
 
     ns.loadData = function(data) {
-        console.group(`Load Data on ${window.location}`);
+        console.group(`Widget.loadData on ${window.location}`);
         console.log(data);
 
         let graphData = data;

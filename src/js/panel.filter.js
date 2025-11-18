@@ -132,7 +132,7 @@ window.Widgets.Panel.Filter = {};
             eventNs.raiseEvent(eventName, data);
         });
         $(document).find("#reload").on('click', function (d) {
-            console.log('reload');
+            console.log('reload clicked');
             window.location.reload();
         });
 
