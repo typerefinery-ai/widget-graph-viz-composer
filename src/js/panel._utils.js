@@ -288,11 +288,10 @@ window.Widgets.Events = window.Widgets.Events || {};
 
     ns.leftclick = function(event, d) {
         console.group(`Widgets.Panel.Utils.leftclick on ${window.location}`);
+        console.log("leftclick event->", event);
+        console.log("leftclick d->", d);
 
         try {
-
-            console.log("event->", event);
-            console.log("d->", d);
 
             //raise event to load form for this content
             try {
