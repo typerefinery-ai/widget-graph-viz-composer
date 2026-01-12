@@ -580,7 +580,7 @@ window.Widgets.Panel.Promo = {}
             .attr('source', (d) => d.source)
             .attr('target', (d) => d.target)
             .attr('stroke-width', 0.75)
-            .attr('stroke', 'grey')
+            .attr('stroke', ns.options.theme.edges)
             .attr('marker-end', 'url(#parrowhead)'); //The marker-end attribute defines the arrowhead or polymarker that will be drawn at the final vertex of the given shape.
 
         ns.promoEdgepaths = ns.promo_svg_root
@@ -590,9 +590,7 @@ window.Widgets.Panel.Promo = {}
             .attr('class', 'pedgepath')
             .attr('fill-opacity', 0)
             .attr('stroke-opacity', 0)
-            .attr('id', function(d, i) {
-                return 'pedgepath' + i;
-            })
+            .attr('id', function(d, i) {return 'pedgepath' + i;})
             .style('pointer-events', 'none');
 
         ns.promoEdgelabels = ns.promo_svg_root
