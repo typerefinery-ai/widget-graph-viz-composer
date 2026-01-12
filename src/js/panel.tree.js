@@ -736,7 +736,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         let image = nodeEnter
           .append('image')
           .attr('x', 10 + ns.options.boxSize / 2)
-          .attr('y', -ns.options.icon_size / 2 - ns.options.boxSize / 2)
+          .attr('y', -ns.options.iconSize / 2 - ns.options.boxSize / 2)
           .attr('xlink:href', function (d) {
             console.log('d->', d)
             // console.log('prefix->', ns.options.prefix, ', shape->', ns.options.shape)
@@ -744,10 +744,10 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
             return ns.options.prefix + ns.options.shape + d.data.icon + '.svg'
           })
           .attr('width', function (d) {
-            return ns.options.icon_size + 5
+            return ns.options.iconSize + 5
           })
           .attr('height', function (d) {
-            return ns.options.icon_size + 5
+            return ns.options.iconSize + 5
           })
           .on('mouseover.tooltip', panelUtilsNs.mouseover)
           .on("mousemove", panelUtilsNs.mousemove)
@@ -757,7 +757,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         // label text
         let label = nodeEnter
           .append('text')
-          .attr('x', ns.options.icon_size + 30 + ns.options.boxSize / 2)
+          .attr('x', ns.options.iconSize + 30 + ns.options.boxSize / 2)
           .attr('text-anchor', 'start')
           .style('font-size', ns.options.itemFont)
           .attr('dy', '0.32em')

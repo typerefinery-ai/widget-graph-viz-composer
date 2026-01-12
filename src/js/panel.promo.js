@@ -552,7 +552,7 @@ window.Widgets.Panel.Promo = {}
             .forceSimulation(panelUtilsNs.split.promo.nodes)
             .force("link", d3.forceLink() // This force provides links between nodes
                 .id(d => d.id) // This sets the node id accessor to the specified function. If not specified, will default to the index of a node.
-                // .distance(500 * ns.options.icon_size)
+                // .distance(500 * ns.options.iconSize)
             );
 
         console.groupEnd();
@@ -631,8 +631,8 @@ window.Widgets.Panel.Promo = {}
                     ns.options.prefix + ns.options.shape + d.icon + '.svg'
                 );
             })
-            .attr('width', ns.options.icon_size + 5)
-            .attr('height', ns.options.icon_size + 5)
+            .attr('width', ns.options.iconSize + 5)
+            .attr('height', ns.options.iconSize + 5)
             .attr('cursor', 'pointer')
             .attr('pointer-events', 'all')
             .on('mouseover.tooltip', panelUtilsNs.mouseover)
@@ -664,8 +664,8 @@ window.Widgets.Panel.Promo = {}
         
                 ns.promo_svg_root
                     .selectAll('.pnodes')
-                    .attr('x', (d) => d.x - ns.options.icon_size / 2)
-                    .attr('y', (d) => d.y - ns.options.icon_size / 2);
+                    .attr('x', (d) => d.x - ns.options.iconSize / 2)
+                    .attr('y', (d) => d.y - ns.options.iconSize / 2);
         
                 ns.promo_svg_root.selectAll('.pedgepath').attr(
                     'd',
@@ -694,7 +694,7 @@ window.Widgets.Panel.Promo = {}
                 .force("link")
                 .links(panelUtilsNs.split.promo.edges)
                 .id(d => d.id)
-                .distance(function() {return 4 * ns.options.icon_size;})
+                .distance(function() {return 4 * ns.options.iconSize;})
                 .strength(0.05);
 
             ns.promotable_sim 
@@ -715,7 +715,7 @@ window.Widgets.Panel.Promo = {}
                 //     console.log("d is ->", d)
                 //     return d.radius;
                 // }))
-                .force("collide", d3.forceCollide(ns.options.icon_size))
+                .force("collide", d3.forceCollide(ns.options.iconSize))
                 // .force("charge", d3.forceManyBody().strength(-200)) // This adds repulsion (if it's negative) between nodes. 
                 .force("charge", d3.forceManyBody().strength(-500)) // This adds repulsion (if it's negative) between nodes. 
                 // .force("center", d3.forceCenter(ns.options.width / 2, ns.options.height / 2)); // This force attracts nodes to the center of the svg area
@@ -724,7 +724,7 @@ window.Widgets.Panel.Promo = {}
                 .force("link")
                 .links(panelUtilsNs.split.promo.edges)
                 .id(d => d.id)
-                .distance(function() {return 4 * ns.options.icon_size;});
+                .distance(function() {return 4 * ns.options.iconSize;});
 
             ns.promotable_sim
                 .force("charge", d3.forceManyBody().strength(-500)) // This adds repulsion (if it's negative) between nodes. 
@@ -853,7 +853,7 @@ window.Widgets.Panel.Promo = {}
                 .append('marker')
                 .attr('id', 'parrowhead')
                 .attr('viewBox', '-0 -5 10 10') //the bound of the SVG viewport for the current SVG fragment. defines a coordinate system 10 wide and 10 high starting on (0,-5)
-                .attr('refX', ns.options.icon_size*1.25) // x coordinate for the reference point of the marker. If circle is bigger, this need to be bigger.
+                .attr('refX', ns.options.iconSize*1.25) // x coordinate for the reference point of the marker. If circle is bigger, this need to be bigger.
                 .attr('refY', 0)
                 .attr('orient', 'auto')
                 .attr('markerWidth', 10)

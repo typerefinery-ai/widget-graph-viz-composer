@@ -80,7 +80,7 @@ window.Widgets.Events = window.Widgets.Events || {};
         prefix:
         'https://raw.githubusercontent.com/os-threat/images/main/img/',
         shape: 'rect-',
-        icon_size: 35,
+        iconSize: 35,
         textPadding: 8,
         corner: 5,
         // the tree view
