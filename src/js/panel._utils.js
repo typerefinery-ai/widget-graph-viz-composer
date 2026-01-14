@@ -572,52 +572,6 @@ window.Widgets.Events = window.Widgets.Events || {};
         return d.id;
     };
 
-    //------------------------------------------
-    // process a layout
-    //
-    ns.processLayout = function (annotate_list, node) {
-        console.log('annotate_list->',annotate_list);
-        console.log("my node is->", node),
-        annotate_list.forEach(function(annotate) {
-            if (annotate.promo_IDs.includes(node.id)) {
-                //What level is the object?
-                //Is it the head object?
-                if (node.id === annotate.id) {
-                    // Its the top level object
-                    node.positionX = annotate.centreX ;
-                    node.positionY = annotate.topY;
-                    // return node;
-                } else {
-                    // Is it in level 2 ?
-                    if (annotate.connections.includes(node.id)) {
-                        // its a 2nd layer thing
-                        annotate.layouts.forEach(function(layout) {
-                            if (layout.connections.includes(node.id)) {
-                                node.positionX = layout.positionX;
-                                node.positionY = layout.positionY;
-                                // return node;
-                            }
-                        });
-                    } else {
-                        // ist a 3rd level or 3.5 level
-                        if (node.type === 'relationship') {
-                            // console.log("its a relation")
-                            node.positionX = 0;
-                            node.positionY = ns.options.layout.top + 2.5*ns.options.layout.distanceY;
-                            return node;
-                        } else {
-                            // console.log("its not a relationship")
-                            node.positionX = 0;
-                            node.positionY = ns.options.layout.top + 2*ns.options.layout.distanceY;
-                            // return node;
-                        }
-                    }
-                }
-
-            }
-        });
-
-    }
 
 
     
@@ -645,7 +599,10 @@ window.Widgets.Events = window.Widgets.Events || {};
 
             ns.split.data = graphData;
 
-            ns.split.adjacency = new ns.Graph();
+            console.log('ns.split->', ns.split);
+
+            // now show the graph with the new data
+            window.Widgets.Panel.ForceGraph.showGraph(ns.split);
 
         } catch (error) {
             console.error("Error in processGraphData", error);
