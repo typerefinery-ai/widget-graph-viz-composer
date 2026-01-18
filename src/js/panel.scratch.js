@@ -433,13 +433,8 @@ window.Widgets.Panel.Scratch = {}
             ns.options.width = ns.$container.width();
             ns.options.height = ns.$container.height();
 
-            if (!panelUtilsNs.theme) {
-                if (ns.options.theme === 'light') {
-                    panelUtilsNs.theme = ns.options.light_theme
-                } else {
-                    panelUtilsNs.theme = ns.options.dark_theme
-                }
-            }
+            // Theme selected by api
+            panelUtilsNs.theme = ns.options.theme;
 
             ns.scratch_svg = d3
                 .select($component.get(0))

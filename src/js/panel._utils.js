@@ -105,7 +105,28 @@ window.Widgets.Events = window.Widgets.Events || {};
         centreStrength: 80,
         promoSim: true,
         scratchSim: true,
-        theme: 'light',
+        theme: {
+            treeFill: 'white',
+            scratchFill: 'blanchedalmond',
+            promoFill: 'ivory',
+            svgName: 'black',
+            svgBorder: 'black',
+            checkColour: 'gray',
+            checkText: 'white',
+            select: 'yellow',
+            edges: 'black',
+            tooltip: {
+                fill: 'white', 
+                stroke: '1px', 
+                scolour: 'black', 
+                corner: 5, 
+                tcolour: 'black', 
+                tsize: '11px', 
+                padding: '5px',
+                maxwidth: '900px',
+                overflow: 'auto'
+            },
+        },
         // API Configuration for Local Mode
         api: {
             // Local mode loads from local files, production uses events only

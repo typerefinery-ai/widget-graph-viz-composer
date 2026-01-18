@@ -846,13 +846,8 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         //copy options into ns
         ns.options = Object.assign({}, options);
 
-        if (!panelUtilsNs.theme) {
-            if (ns.options.theme === 'light') {
-                panelUtilsNs.theme = ns.options.light_theme
-            } else {
-                panelUtilsNs.theme = ns.options.dark_theme
-            }
-        }
+        // Theme selected by api
+        panelUtilsNs.theme = ns.options.theme;
 
         /// init svg
         ns.tree_svg = d3

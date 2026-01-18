@@ -87,11 +87,7 @@ window.Widgets.Panel.Filter = {};
             console.groupEnd();
         });
         
-        if (ns.options.theme === 'light') {
-            panelUtilsNs.theme = ns.options.light_theme
-        } else {
-            panelUtilsNs.theme = ns.options.dark_theme
-        }
+        panelUtilsNs.theme = ns.options.theme;
 
         //init event buttons
         const $event_buttons = $component.find('#toggle_options');

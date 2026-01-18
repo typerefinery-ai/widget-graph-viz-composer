@@ -170,7 +170,9 @@ window.Widgets.Widget = {};
         panelScratchNs.simGraph();
         panelScratchNs.showGraph();
 
-        
+        //TODO: load options data into panel utils from Composer-Options API
+        ns.options = window.Widgets.Panel.Utils.options;
+
         // Show success notification
         panelUtilsNs.showNotification('success', "Data loaded into all panels successfully");
 
@@ -242,15 +244,8 @@ window.Widgets.Widget = {};
         try {
             console.log(d3, componentsNs, eventsNs);
 
-
-            if (!panelUtilsNs.theme) {
-                if (panelUtilsNs.options.theme === 'light') {
-                    panelUtilsNs.theme = panelUtilsNs.options.light_theme
-                } else {
-                    panelUtilsNs.theme = panelUtilsNs.options.dark_theme
-                }
-            }
-
+            // Theme selected by api
+            panelUtilsNs.theme = ns.options.theme;
 
             // init tree
 

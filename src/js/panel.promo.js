@@ -687,8 +687,6 @@ window.Widgets.Panel.Promo = {}
 
         // Setup either the Layout, or Default Force Graph
         if (ns.options.promoSim) {
-
-
             
             ns.promotable_sim 
                 .force("link")
@@ -795,15 +793,9 @@ window.Widgets.Panel.Promo = {}
 
             ns.options.width = ns.$container.width();
             ns.options.height = ns.$container.height();
-
-            if (!panelUtilsNs.theme) {
-                if (ns.options.theme === 'light') {
-                    panelUtilsNs.theme = ns.options.light_theme
-                } else {
-                    panelUtilsNs.theme = ns.options.dark_theme
-                }
-            }
-
+            // Theme selected by api
+            panelUtilsNs.theme = ns.options.theme;
+            
             ns.promo_svg = d3
                 .select($component.get(0))
                 .append('svg')
