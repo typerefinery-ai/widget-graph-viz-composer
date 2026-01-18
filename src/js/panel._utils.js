@@ -105,7 +105,7 @@ window.Widgets.Events = window.Widgets.Events || {};
         centreStrength: 80,
         promoSim: true,
         scratchSim: true,
-        theme: {
+        theme: {  // theme choice now made in API options
             treeFill: 'white',
             scratchFill: 'blanchedalmond',
             promoFill: 'ivory',
@@ -150,51 +150,7 @@ window.Widgets.Events = window.Widgets.Events || {};
             showErrorMessages: true,
             showWarningMessages: true,
             showInfoMessages: true
-        },
-        light_theme: {
-            treeFill: 'white',
-            scratchFill: 'blanchedalmond',
-            promoFill: 'ivory',
-            svgName: 'black',
-            svgBorder: 'black',
-            checkColour: 'gray',
-            checkText: 'white',
-            select: 'yellow',
-            edges: 'black',
-            tooltip: {
-                fill: 'white', 
-                stroke: '1px', 
-                scolour: 'black', 
-                corner: 5, 
-                tcolour: 'black', 
-                tsize: '11px', 
-                padding: '5px',
-                maxwidth: '900px',
-                overflow: 'auto'
-            },
-        },
-        dark_theme: {
-            treeFill: '#555555',
-            scratchFill: 'gray',
-            promoFill: 'dimgray',
-            svgName: 'white',
-            svgBorder: 'white',
-            checkColour: 'white',
-            checkText: 'gray',
-            select: 'yellow',
-            edges: 'white',
-            tooltip: {
-                fill: 'lightgray', 
-                stroke: '1px', 
-                scolour: 'white', 
-                corner: 5, 
-                tcolour: 'white', 
-                tsize: '11px', 
-                padding: '5px',
-                maxwidth: '900px',
-                overflow: 'auto'
-            },
-        },
+        }
     };
 
     ns.contentMenuActive = false;
