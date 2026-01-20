@@ -580,7 +580,7 @@ window.Widgets.Panel.Promo = {}
             .attr('source', (d) => d.source)
             .attr('target', (d) => d.target)
             .attr('stroke-width', 0.75)
-            .attr('stroke', ns.options.theme.edges)
+            .attr('stroke', panelUtilsNs.theme.edges)
             .attr('marker-end', 'url(#parrowhead)'); //The marker-end attribute defines the arrowhead or polymarker that will be drawn at the final vertex of the given shape.
 
         ns.promoEdgepaths = ns.promo_svg_root
@@ -795,7 +795,7 @@ window.Widgets.Panel.Promo = {}
             ns.options.height = ns.$container.height();
             // Theme selected by api
             panelUtilsNs.theme = ns.options.theme;
-            
+
             ns.promo_svg = d3
                 .select($component.get(0))
                 .append('svg')
