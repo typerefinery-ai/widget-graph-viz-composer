@@ -87,7 +87,7 @@ window.Widgets.Panel.Filter = {};
             console.groupEnd();
         });
         
-        panelUtilsNs.theme = ns.options.theme;
+        panelUtilsNs.theme = panelUtilsNs.options.theme;
 
         //init event buttons
         const $event_buttons = $component.find('#toggle_options');

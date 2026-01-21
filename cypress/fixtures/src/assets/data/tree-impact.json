@@ -1,1 +1,55 @@
-{"name":"Impact List","icon":"impact","type":"","heading":"Impact List","description":"List of Impacts for this Incident","edge":"","id":"","children":[{"id":"impact--6149c82a-fbda-48cc-84e4-60a0f73cfb2c","type":"impact","original":{"type":"impact","spec_version":"2.1","id":"impact--6149c82a-fbda-48cc-84e4-60a0f73cfb2c","created":"2025-04-07T05:14:18.517Z","modified":"2025-04-07T05:14:18.517Z","impact_category":"availability","criticality":99,"description":"Laptop is stuffed","end_time":"2025-04-07T05:14:18.517Z","impacted_entity_counts":{"computers-mobile":1},"impacted_refs":["identity--c0f33394-c5d9-4e1f-8b65-f6cae8351831"],"recoverability":"regular","start_time":"2025-04-07T05:14:18.517Z","extensions":{"availability":{"availability_impact":99},"extension-definition--7cc33dd6-f6a1-489b-98ea-522d351d71b9":{"extension_type":"new-sdo"}}},"icon":"impact-availability","name":"Availability Impact","heading":"Availability Impact","description":"<br>Laptop is stuffed<br>Total Impact ->99<br>Impacted Entities -> <br>Laptop is stuffed<br>Variety -> 99computers-mobile -> 1","object_form":"impact","object_group":"sdo-forms","object_family":"extension-forms","edge":"impact_refs","children":[{"id":"identity--c0f33394-c5d9-4e1f-8b65-f6cae8351831","type":"identity","original":{"type":"identity","spec_version":"2.1","id":"identity--c0f33394-c5d9-4e1f-8b65-f6cae8351831","created":"2025-04-07T05:05:15.286Z","modified":"2025-04-07T05:05:15.286Z","name":"HP Laptop 1","description":"Usr 1's Laptop","roles":["laptop"],"identity_class":"asset","sectors":["technology"],"external_references":[{"source_name":"HP Ultima 10","description":"16GB RAM, 1TB SD, Microsoft Windows 11 Professional","url":"https://mail.echange.microsoft.com","external_id":"Asset--629456a"}]},"icon":"identity-asset","name":"Hardware Asset","heading":"Hardware Asset - HP Laptop 1","description":"<br>Usr 1's Laptop<br>HP Ultima 10<br>16GB RAM, 1TB SD, Microsoft Windows 11 Professional","object_form":"identity","object_group":"sdo-forms","object_family":"stix-forms","edge":"impacted_refs"}]}]}
+{
+    "name": "Impact List",
+    "icon": "impact",
+    "type": "",
+    "heading": "Impact List",
+    "description": "List of Impacts for this Incident",
+    "edge": "",
+    "id": "",
+    "children": [
+        {
+            "id": "impact--41c78868-6734-4c14-9066-cae6687219f2",
+            "type": "impact",
+            "icon": "impact-availability",
+            "name": "",
+            "heading": "Impact-Availability",
+            "description": "Impact ->99<br>Description ->Laptop is stuffed",
+            "object_form": "impact",
+            "object_group": "sdo-forms",
+            "object_family": "os-threat-forms",
+            "original": {
+                "type": "impact",
+                "spec_version": "2.1",
+                "id": "impact--41c78868-6734-4c14-9066-cae6687219f2",
+                "created": "2025-12-23T11:51:35.656Z",
+                "modified": "2025-12-23T11:51:35.656Z",
+                "impact_category": "availability",
+                "criticality": 99,
+                "description": "Laptop is stuffed",
+                "end_time": "2025-12-23T11:51:35.656Z",
+                "impacted_entity_counts": {
+                    "computers-mobile": 1
+                },
+                "impacted_refs": [
+                    "identity--e062ba4b-eac6-4e2f-82f8-8907de29f156"
+                ],
+                "recoverability": "regular",
+                "start_time": "2025-12-23T11:51:35.656Z",
+                "extensions": {
+                    "availability": {
+                        "availability_impact": 99
+                    },
+                    "extension-definition--7cc33dd6-f6a1-489b-98ea-522d351d71b9": {
+                        "extension_type": "new-sdo"
+                    }
+                }
+            },
+            "references": {
+                "impacted_refs": [
+                    "identity--e062ba4b-eac6-4e2f-82f8-8907de29f156"
+                ]
+            },
+            "edge": "impact_refs"
+        }
+    ]
+}

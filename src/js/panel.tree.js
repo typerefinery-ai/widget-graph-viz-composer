@@ -847,7 +847,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         ns.options = Object.assign({}, options);
 
         // Theme selected by api
-        panelUtilsNs.theme = ns.options.theme;
+        panelUtilsNs.theme = panelUtilsNs.options.theme;
 
         /// init svg
         ns.tree_svg = d3

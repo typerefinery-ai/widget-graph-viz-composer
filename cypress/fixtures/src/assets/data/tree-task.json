@@ -1,1 +1,69 @@
-{"name":"Task List","icon":"task-group","heading":"Task List","description":"List of all tasks","type":"","edge":"","id":"","children":[{"id":"task--cbe7f332-b393-4a84-827b-69d07dc3c848","type":"task","original":{"type":"task","spec_version":"2.1","id":"task--cbe7f332-b393-4a84-827b-69d07dc3c848","created":"2025-04-07T05:14:05.27Z","modified":"2025-04-07T05:14:05.27Z","description":"Suspicious email reported by user","end_time":"2025-04-07T05:14:05.27Z","name":"Potential Phishing Email","start_time":"2025-04-07T05:14:05.27Z","extensions":{"extension-definition--2074a052-8be4-4932-849e-f5e7798e0030":{"extension_type":"new-sdo"}}},"icon":"task","name":"Task","heading":"Task -> Potential Phishing Email","description":"<br>Suspicious email reported by user","object_form":"task","object_group":"sdo-forms","object_family":"extension-forms","edge":"task_refs"},{"id":"task--8b50a1b9-c227-47b6-8e0c-97f2a493171d","type":"task","original":{"type":"task","spec_version":"2.1","id":"task--8b50a1b9-c227-47b6-8e0c-97f2a493171d","created":"2025-04-07T05:14:18.658Z","modified":"2025-04-07T05:14:18.658Z","description":"Find out who else got the email","end_time":"2025-04-07T05:14:18.658Z","name":"Query Exchange Server","start_time":"2025-04-07T05:14:18.658Z","extensions":{"extension-definition--2074a052-8be4-4932-849e-f5e7798e0030":{"extension_type":"new-sdo"}}},"icon":"task","name":"Task","heading":"Task -> Query Exchange Server","description":"<br>Find out who else got the email","object_form":"task","object_group":"sdo-forms","object_family":"extension-forms","edge":"task_refs"}]}
+{
+    "name": "Task List",
+    "icon": "task-group",
+    "heading": "Task List",
+    "description": "List of all tasks",
+    "type": "",
+    "edge": "",
+    "id": "",
+    "children": [
+        {
+            "id": "task--a8ded3ad-09ef-479a-9f36-b69be8758fed",
+            "type": "task",
+            "icon": "task",
+            "name": "",
+            "heading": "Task",
+            "description": "Description ->Suspicious email reported by user",
+            "object_form": "task",
+            "object_group": "sdo-forms",
+            "object_family": "attack-forms",
+            "original": {
+                "type": "task",
+                "spec_version": "2.1",
+                "id": "task--a8ded3ad-09ef-479a-9f36-b69be8758fed",
+                "created": "2025-12-23T11:51:27.112Z",
+                "modified": "2025-12-23T11:51:27.112Z",
+                "description": "Suspicious email reported by user",
+                "end_time": "2025-12-23T11:51:27.112Z",
+                "name": "Potential Phishing Email",
+                "start_time": "2025-12-23T11:51:27.112Z",
+                "extensions": {
+                    "extension-definition--2074a052-8be4-4932-849e-f5e7798e0030": {
+                        "extension_type": "new-sdo"
+                    }
+                }
+            },
+            "references": {},
+            "edge": "task_refs"
+        },
+        {
+            "id": "task--2efce62b-0902-449e-9fa5-1da1ad0a91f7",
+            "type": "task",
+            "icon": "task",
+            "name": "",
+            "heading": "Task",
+            "description": "Description ->Find out who else got the email",
+            "object_form": "task",
+            "object_group": "sdo-forms",
+            "object_family": "attack-forms",
+            "original": {
+                "type": "task",
+                "spec_version": "2.1",
+                "id": "task--2efce62b-0902-449e-9fa5-1da1ad0a91f7",
+                "created": "2025-12-23T11:51:35.774Z",
+                "modified": "2025-12-23T11:51:35.774Z",
+                "description": "Find out who else got the email",
+                "end_time": "2025-12-23T11:51:35.774Z",
+                "name": "Query Exchange Server",
+                "start_time": "2025-12-23T11:51:35.774Z",
+                "extensions": {
+                    "extension-definition--2074a052-8be4-4932-849e-f5e7798e0030": {
+                        "extension_type": "new-sdo"
+                    }
+                }
+            },
+            "references": {},
+            "edge": "task_refs"
+        }
+    ]
+}

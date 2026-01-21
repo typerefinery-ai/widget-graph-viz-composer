@@ -1,1 +1,582 @@
-{"name":"Type Refinery User","icon":"identity-class","type":"","heading":"Type Refinery User","description":"User identity, email addresses, contact numbers and user accounts","edge":"","id":"","original":"","children":[]}
+{
+    "name": "Type Refinery User",
+    "icon": "identity-class",
+    "type": "",
+    "heading": "Type Refinery User",
+    "description": "User identity, email addresses, contact numbers and user accounts",
+    "edge": "",
+    "id": "",
+    "original": "",
+    "children": [
+        {
+            "id": "identity--d565842e-be68-44e2-87b6-c4278ad34b29",
+            "type": "identity",
+            "icon": "identity-ext",
+            "name": "",
+            "heading": "Extended-Identity",
+            "description": "Name -> Trusty Jones<br>Description ->A Trusty Individual",
+            "object_form": "identity",
+            "object_group": "sdo-forms",
+            "object_family": "stix-forms",
+            "original": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--d565842e-be68-44e2-87b6-c4278ad34b29",
+                "created": "2025-12-23T11:50:00.740Z",
+                "modified": "2025-12-23T11:50:00.740Z",
+                "name": "Trusty Jones",
+                "description": "A Trusty Individual",
+                "roles": [
+                    "soc",
+                    "support"
+                ],
+                "identity_class": "individual",
+                "sectors": [
+                    "technology"
+                ],
+                "extensions": {
+                    "extension-definition--66e2492a-bbd3-4be6-88f5-cc91a017a498": {
+                        "extension_type": "property-extension",
+                        "contact_numbers": [
+                            {
+                                "contact_number_type": "work-phone",
+                                "contact_number": "0418-208-368"
+                            }
+                        ],
+                        "email_addresses": [
+                            {
+                                "digital_contact_type": "work",
+                                "email_address_ref": "email-addr--c99b87bd-f0a8-50ca-9f84-68072efc61e3"
+                            }
+                        ],
+                        "first_name": "Me",
+                        "last_name": "Jones",
+                        "middle_name": "Percival",
+                        "prefix": "Dr",
+                        "social_media_accounts": [
+                            {
+                                "digital_contact_type": "work",
+                                "user_account_ref": "user-account--83658594-537d-5c32-b9f0-137354bd9bc3"
+                            }
+                        ],
+                        "team": "os-threat"
+                    }
+                }
+            },
+            "references": {
+                "email_address_ref": [
+                    "email-addr--c99b87bd-f0a8-50ca-9f84-68072efc61e3"
+                ],
+                "user_account_ref": [
+                    "user-account--83658594-537d-5c32-b9f0-137354bd9bc3"
+                ]
+            },
+            "edge": "owner",
+            "children": [
+                {
+                    "id": "user-account--83658594-537d-5c32-b9f0-137354bd9bc3",
+                    "type": "user-account",
+                    "icon": "user-account",
+                    "name": "79563902",
+                    "heading": "User-Account",
+                    "description": "ID -> 79563902<br>Display Name -> Trusty Jones<br>Type -> soc,",
+                    "object_form": "user-account",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "user-account",
+                        "spec_version": "2.1",
+                        "id": "user-account--83658594-537d-5c32-b9f0-137354bd9bc3",
+                        "user_id": "79563902",
+                        "account_login": "tjones",
+                        "account_type": "soc,",
+                        "display_name": "Trusty Jones"
+                    },
+                    "references": {},
+                    "edge": "owner-of"
+                },
+                {
+                    "id": "email-addr--c99b87bd-f0a8-50ca-9f84-68072efc61e3",
+                    "type": "email-addr",
+                    "icon": "email-addr",
+                    "name": "trusty@example.com",
+                    "heading": "Email-Addr",
+                    "description": "Value -> trusty@example.com<br>Display Name -> Trusty Jones<br>Belongs to -> user-account--83658594-537d-5c32-b9f0-137354bd9bc3",
+                    "object_form": "email-addr",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "email-addr",
+                        "spec_version": "2.1",
+                        "id": "email-addr--c99b87bd-f0a8-50ca-9f84-68072efc61e3",
+                        "value": "trusty@example.com",
+                        "display_name": "Trusty Jones",
+                        "belongs_to_ref": "user-account--83658594-537d-5c32-b9f0-137354bd9bc3"
+                    },
+                    "references": {
+                        "belongs_to_ref": [
+                            "user-account--83658594-537d-5c32-b9f0-137354bd9bc3"
+                        ]
+                    },
+                    "edge": "owner-of"
+                }
+            ]
+        },
+        {
+            "id": "identity--b80f7953-bb11-4865-a20b-8af8e14e3879",
+            "type": "identity",
+            "icon": "identity-ext",
+            "name": "",
+            "heading": "Extended-Identity",
+            "description": "Name -> Helpful Expert<br>Description ->A Helpful Individual",
+            "object_form": "identity",
+            "object_group": "sdo-forms",
+            "object_family": "stix-forms",
+            "original": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--b80f7953-bb11-4865-a20b-8af8e14e3879",
+                "created": "2025-12-23T11:50:00.948Z",
+                "modified": "2025-12-23T11:50:00.948Z",
+                "name": "Helpful Expert",
+                "description": "A Helpful Individual",
+                "roles": [
+                    "user",
+                    "soc"
+                ],
+                "identity_class": "individual",
+                "sectors": [
+                    "technology"
+                ],
+                "extensions": {
+                    "extension-definition--66e2492a-bbd3-4be6-88f5-cc91a017a498": {
+                        "extension_type": "property-extension",
+                        "contact_numbers": [
+                            {
+                                "contact_number_type": "work-phone",
+                                "contact_number": "0499-999-108"
+                            }
+                        ],
+                        "email_addresses": [
+                            {
+                                "digital_contact_type": "work",
+                                "email_address_ref": "email-addr--f4889f76-152d-5527-a85f-9e8c07bf71b9"
+                            }
+                        ],
+                        "first_name": "Helpful",
+                        "last_name": "Expert",
+                        "middle_name": "",
+                        "prefix": "Mr",
+                        "social_media_accounts": [
+                            {
+                                "digital_contact_type": "work",
+                                "user_account_ref": "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3"
+                            }
+                        ],
+                        "team": "os-threat"
+                    }
+                }
+            },
+            "references": {
+                "email_address_ref": [
+                    "email-addr--f4889f76-152d-5527-a85f-9e8c07bf71b9"
+                ],
+                "user_account_ref": [
+                    "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3"
+                ]
+            },
+            "edge": "team-member",
+            "children": [
+                {
+                    "id": "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3",
+                    "type": "user-account",
+                    "icon": "user-account",
+                    "name": "79563903",
+                    "heading": "User-Account",
+                    "description": "ID -> 79563903<br>Display Name -> Helpful Expert<br>Type -> soc,",
+                    "object_form": "user-account",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "user-account",
+                        "spec_version": "2.1",
+                        "id": "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3",
+                        "user_id": "79563903",
+                        "account_login": "hexpert",
+                        "account_type": "soc,",
+                        "display_name": "Helpful Expert"
+                    },
+                    "references": {},
+                    "edge": "owner-of"
+                },
+                {
+                    "id": "email-addr--f4889f76-152d-5527-a85f-9e8c07bf71b9",
+                    "type": "email-addr",
+                    "icon": "email-addr",
+                    "name": "helpful@example.com",
+                    "heading": "Email-Addr",
+                    "description": "Value -> helpful@example.com<br>Display Name -> Helpful Expert<br>Belongs to -> user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3",
+                    "object_form": "email-addr",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "email-addr",
+                        "spec_version": "2.1",
+                        "id": "email-addr--f4889f76-152d-5527-a85f-9e8c07bf71b9",
+                        "value": "helpful@example.com",
+                        "display_name": "Helpful Expert",
+                        "belongs_to_ref": "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3"
+                    },
+                    "references": {
+                        "belongs_to_ref": [
+                            "user-account--c58f2f3c-c3df-5f1a-9f19-e642a01bced3"
+                        ]
+                    },
+                    "edge": "owner-of"
+                }
+            ]
+        },
+        {
+            "id": "identity--2005e8e4-d01c-4b01-b036-8e930fcba414",
+            "type": "identity",
+            "icon": "identity-ext",
+            "name": "",
+            "heading": "Extended-Identity",
+            "description": "Name -> Useful Advisor<br>Description ->A Useful Individual",
+            "object_form": "identity",
+            "object_group": "sdo-forms",
+            "object_family": "stix-forms",
+            "original": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--2005e8e4-d01c-4b01-b036-8e930fcba414",
+                "created": "2025-12-23T11:50:01.216Z",
+                "modified": "2025-12-23T11:50:01.216Z",
+                "name": "Useful Advisor",
+                "description": "A Useful Individual",
+                "roles": [
+                    "user",
+                    "soc"
+                ],
+                "identity_class": "individual",
+                "sectors": [
+                    "technology"
+                ],
+                "extensions": {
+                    "extension-definition--66e2492a-bbd3-4be6-88f5-cc91a017a498": {
+                        "extension_type": "property-extension",
+                        "contact_numbers": [
+                            {
+                                "contact_number_type": "work-phone",
+                                "contact_number": "0499-999-107"
+                            }
+                        ],
+                        "email_addresses": [
+                            {
+                                "digital_contact_type": "work",
+                                "email_address_ref": "email-addr--54e892e4-776c-5866-ac6a-306b3eac53ce"
+                            }
+                        ],
+                        "first_name": "Useful",
+                        "last_name": "Advisor",
+                        "middle_name": "",
+                        "prefix": "Mr",
+                        "social_media_accounts": [
+                            {
+                                "digital_contact_type": "work",
+                                "user_account_ref": "user-account--e794cc12-c6b8-56ce-be53-e466290476d1"
+                            }
+                        ],
+                        "team": "os-threat"
+                    }
+                }
+            },
+            "references": {
+                "email_address_ref": [
+                    "email-addr--54e892e4-776c-5866-ac6a-306b3eac53ce"
+                ],
+                "user_account_ref": [
+                    "user-account--e794cc12-c6b8-56ce-be53-e466290476d1"
+                ]
+            },
+            "edge": "team-member",
+            "children": [
+                {
+                    "id": "user-account--e794cc12-c6b8-56ce-be53-e466290476d1",
+                    "type": "user-account",
+                    "icon": "user-account",
+                    "name": "79563904",
+                    "heading": "User-Account",
+                    "description": "ID -> 79563904<br>Display Name -> Useful Advisor<br>Type -> soc,",
+                    "object_form": "user-account",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "user-account",
+                        "spec_version": "2.1",
+                        "id": "user-account--e794cc12-c6b8-56ce-be53-e466290476d1",
+                        "user_id": "79563904",
+                        "account_login": "uadvisor",
+                        "account_type": "soc,",
+                        "display_name": "Useful Advisor"
+                    },
+                    "references": {},
+                    "edge": "owner-of"
+                },
+                {
+                    "id": "email-addr--54e892e4-776c-5866-ac6a-306b3eac53ce",
+                    "type": "email-addr",
+                    "icon": "email-addr",
+                    "name": "useful@example.com",
+                    "heading": "Email-Addr",
+                    "description": "Value -> useful@example.com<br>Display Name -> Useful Advisor<br>Belongs to -> user-account--e794cc12-c6b8-56ce-be53-e466290476d1",
+                    "object_form": "email-addr",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "email-addr",
+                        "spec_version": "2.1",
+                        "id": "email-addr--54e892e4-776c-5866-ac6a-306b3eac53ce",
+                        "value": "useful@example.com",
+                        "display_name": "Useful Advisor",
+                        "belongs_to_ref": "user-account--e794cc12-c6b8-56ce-be53-e466290476d1"
+                    },
+                    "references": {
+                        "belongs_to_ref": [
+                            "user-account--e794cc12-c6b8-56ce-be53-e466290476d1"
+                        ]
+                    },
+                    "edge": "owner-of"
+                }
+            ]
+        },
+        {
+            "id": "identity--e1ef4b06-984e-41e7-baeb-4101b0779b42",
+            "type": "identity",
+            "icon": "identity-ext",
+            "name": "",
+            "heading": "Extended-Identity",
+            "description": "Name -> Creative Specialist<br>Description ->A Creative Individual",
+            "object_form": "identity",
+            "object_group": "sdo-forms",
+            "object_family": "stix-forms",
+            "original": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--e1ef4b06-984e-41e7-baeb-4101b0779b42",
+                "created": "2025-12-23T11:50:01.591Z",
+                "modified": "2025-12-23T11:50:01.591Z",
+                "name": "Creative Specialist",
+                "description": "A Creative Individual",
+                "roles": [
+                    "user",
+                    "soc"
+                ],
+                "identity_class": "individual",
+                "sectors": [
+                    "technology"
+                ],
+                "extensions": {
+                    "extension-definition--66e2492a-bbd3-4be6-88f5-cc91a017a498": {
+                        "extension_type": "property-extension",
+                        "contact_numbers": [
+                            {
+                                "contact_number_type": "work-phone",
+                                "contact_number": "0499-999-106"
+                            }
+                        ],
+                        "email_addresses": [
+                            {
+                                "digital_contact_type": "work",
+                                "email_address_ref": "email-addr--dac1c6fd-9c82-5f19-9549-aed64fc20326"
+                            }
+                        ],
+                        "first_name": "Creative",
+                        "last_name": "Specialist",
+                        "middle_name": "",
+                        "prefix": "Ms",
+                        "social_media_accounts": [
+                            {
+                                "digital_contact_type": "work",
+                                "user_account_ref": "user-account--56e9bb55-726a-5f61-b628-82058d914a7d"
+                            }
+                        ],
+                        "team": "os-threat"
+                    }
+                }
+            },
+            "references": {
+                "email_address_ref": [
+                    "email-addr--dac1c6fd-9c82-5f19-9549-aed64fc20326"
+                ],
+                "user_account_ref": [
+                    "user-account--56e9bb55-726a-5f61-b628-82058d914a7d"
+                ]
+            },
+            "edge": "team-member",
+            "children": [
+                {
+                    "id": "user-account--56e9bb55-726a-5f61-b628-82058d914a7d",
+                    "type": "user-account",
+                    "icon": "user-account",
+                    "name": "79563905",
+                    "heading": "User-Account",
+                    "description": "ID -> 79563905<br>Display Name -> Creative Specialist<br>Type -> soc,",
+                    "object_form": "user-account",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "user-account",
+                        "spec_version": "2.1",
+                        "id": "user-account--56e9bb55-726a-5f61-b628-82058d914a7d",
+                        "user_id": "79563905",
+                        "account_login": "cspecialist",
+                        "account_type": "soc,",
+                        "display_name": "Creative Specialist"
+                    },
+                    "references": {},
+                    "edge": "owner-of"
+                },
+                {
+                    "id": "email-addr--dac1c6fd-9c82-5f19-9549-aed64fc20326",
+                    "type": "email-addr",
+                    "icon": "email-addr",
+                    "name": "creative@example.com",
+                    "heading": "Email-Addr",
+                    "description": "Value -> creative@example.com<br>Display Name -> Creative Specialist<br>Belongs to -> user-account--56e9bb55-726a-5f61-b628-82058d914a7d",
+                    "object_form": "email-addr",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "email-addr",
+                        "spec_version": "2.1",
+                        "id": "email-addr--dac1c6fd-9c82-5f19-9549-aed64fc20326",
+                        "value": "creative@example.com",
+                        "display_name": "Creative Specialist",
+                        "belongs_to_ref": "user-account--56e9bb55-726a-5f61-b628-82058d914a7d"
+                    },
+                    "references": {
+                        "belongs_to_ref": [
+                            "user-account--56e9bb55-726a-5f61-b628-82058d914a7d"
+                        ]
+                    },
+                    "edge": "owner-of"
+                }
+            ]
+        },
+        {
+            "id": "identity--df7791f3-6bc4-472e-a86b-827a5ef30c20",
+            "type": "identity",
+            "icon": "identity-ext",
+            "name": "",
+            "heading": "Extended-Identity",
+            "description": "Name -> Strategic Analyst<br>Description ->A Strategic Individual",
+            "object_form": "identity",
+            "object_group": "sdo-forms",
+            "object_family": "stix-forms",
+            "original": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--df7791f3-6bc4-472e-a86b-827a5ef30c20",
+                "created": "2025-12-23T11:50:01.848Z",
+                "modified": "2025-12-23T11:50:01.848Z",
+                "name": "Strategic Analyst",
+                "description": "A Strategic Individual",
+                "roles": [
+                    "user",
+                    "soc"
+                ],
+                "identity_class": "individual",
+                "sectors": [
+                    "technology"
+                ],
+                "extensions": {
+                    "extension-definition--66e2492a-bbd3-4be6-88f5-cc91a017a498": {
+                        "extension_type": "property-extension",
+                        "contact_numbers": [
+                            {
+                                "contact_number_type": "work-phone",
+                                "contact_number": "0499-999-105"
+                            }
+                        ],
+                        "email_addresses": [
+                            {
+                                "digital_contact_type": "work",
+                                "email_address_ref": "email-addr--4a76ab32-6c88-59a1-8e69-bbe58ddc61d0"
+                            }
+                        ],
+                        "first_name": "Strategic",
+                        "last_name": "Analyst",
+                        "middle_name": "",
+                        "prefix": "Dr",
+                        "social_media_accounts": [
+                            {
+                                "digital_contact_type": "work",
+                                "user_account_ref": "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b"
+                            }
+                        ],
+                        "team": "os-threat"
+                    }
+                }
+            },
+            "references": {
+                "email_address_ref": [
+                    "email-addr--4a76ab32-6c88-59a1-8e69-bbe58ddc61d0"
+                ],
+                "user_account_ref": [
+                    "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b"
+                ]
+            },
+            "edge": "team-member",
+            "children": [
+                {
+                    "id": "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b",
+                    "type": "user-account",
+                    "icon": "user-account",
+                    "name": "79563906",
+                    "heading": "User-Account",
+                    "description": "ID -> 79563906<br>Display Name -> Strategic Analyst<br>Type -> soc,",
+                    "object_form": "user-account",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "user-account",
+                        "spec_version": "2.1",
+                        "id": "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b",
+                        "user_id": "79563906",
+                        "account_login": "sanalyst",
+                        "account_type": "soc,",
+                        "display_name": "Strategic Analyst"
+                    },
+                    "references": {},
+                    "edge": "owner-of"
+                },
+                {
+                    "id": "email-addr--4a76ab32-6c88-59a1-8e69-bbe58ddc61d0",
+                    "type": "email-addr",
+                    "icon": "email-addr",
+                    "name": "strategic@example.com",
+                    "heading": "Email-Addr",
+                    "description": "Value -> strategic@example.com<br>Display Name -> Strategic Analyst<br>Belongs to -> user-account--a21869a5-7e95-5639-a7a7-aef83445c46b",
+                    "object_form": "email-addr",
+                    "object_group": "sco-forms",
+                    "object_family": "stix-forms",
+                    "original": {
+                        "type": "email-addr",
+                        "spec_version": "2.1",
+                        "id": "email-addr--4a76ab32-6c88-59a1-8e69-bbe58ddc61d0",
+                        "value": "strategic@example.com",
+                        "display_name": "Strategic Analyst",
+                        "belongs_to_ref": "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b"
+                    },
+                    "references": {
+                        "belongs_to_ref": [
+                            "user-account--a21869a5-7e95-5639-a7a7-aef83445c46b"
+                        ]
+                    },
+                    "edge": "owner-of"
+                }
+            ]
+        }
+    ]
+}

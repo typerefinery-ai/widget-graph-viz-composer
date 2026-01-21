@@ -231,7 +231,7 @@ window.Widgets.Widget = {};
             console.log(d3, componentsNs, eventsNs);
 
             // Theme selected by api
-            panelUtilsNs.theme = ns.options.theme;
+            panelUtilsNs.theme = panelUtilsNs.options.theme;
 
             // init tree
 

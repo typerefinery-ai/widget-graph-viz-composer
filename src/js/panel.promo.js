@@ -794,7 +794,7 @@ window.Widgets.Panel.Promo = {}
             ns.options.width = ns.$container.width();
             ns.options.height = ns.$container.height();
             // Theme selected by api
-            panelUtilsNs.theme = ns.options.theme;
+            panelUtilsNs.theme = panelUtilsNs.options.theme;
 
             ns.promo_svg = d3
                 .select($component.get(0))

@@ -1,1 +1,44 @@
-{"name":"Event List","icon":"event","type":"","heading":"Event List","description":"The list of events that have been observed in the incident","edge":"","id":"","children":[{"id":"event--62f28dde-20c2-4d2c-9f20-d16b30823dba","type":"event","original":{"type":"event","spec_version":"2.1","id":"event--62f28dde-20c2-4d2c-9f20-d16b30823dba","created":"2025-04-07T05:14:04.845Z","modified":"2025-04-07T05:14:04.845Z","description":"Suspicious email reported by user","end_time":"2025-04-07T05:14:04.845Z","event_types":["dissemination-phishing-emails"],"name":"Potential Phishing Email","start_time":"2025-04-07T05:14:04.845Z","extensions":{"extension-definition--4ca6de00-5b0d-45ef-a1dc-ea7279ea910e":{"extension_type":"new-sdo"}}},"icon":"event","name":"Event","heading":"Event -> Potential Phishing Email, Status -> ","description":"<br>Suspicious email reported by user","object_form":"event","object_group":"sdo-forms","object_family":"extension-forms","edge":"event_index","children":[]}]}
+{
+    "name": "Event List",
+    "icon": "event",
+    "type": "",
+    "heading": "Event List",
+    "description": "The list of events that have been observed in the incident",
+    "edge": "",
+    "id": "",
+    "children": [
+        {
+            "id": "event--96e36ea9-a898-4a83-a4e4-18d80ee23f11",
+            "type": "event",
+            "icon": "event",
+            "name": "Potential Phishing Email",
+            "heading": "Event",
+            "description": "Name -> Potential Phishing Email<br>Description ->Suspicious email reported by user",
+            "object_form": "event",
+            "object_group": "sdo-forms",
+            "object_family": "oca-forms",
+            "original": {
+                "type": "event",
+                "spec_version": "2.1",
+                "id": "event--96e36ea9-a898-4a83-a4e4-18d80ee23f11",
+                "created": "2025-12-23T11:51:26.438Z",
+                "modified": "2025-12-23T11:51:26.438Z",
+                "description": "Suspicious email reported by user",
+                "end_time": "2025-12-23T11:51:26.438Z",
+                "event_types": [
+                    "dissemination-phishing-emails"
+                ],
+                "name": "Potential Phishing Email",
+                "start_time": "2025-12-23T11:51:26.438Z",
+                "extensions": {
+                    "extension-definition--4ca6de00-5b0d-45ef-a1dc-ea7279ea910e": {
+                        "extension_type": "new-sdo"
+                    }
+                }
+            },
+            "references": {},
+            "edge": "event_index",
+            "children": []
+        }
+    ]
+}
