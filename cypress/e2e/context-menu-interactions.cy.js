@@ -2,7 +2,7 @@
 
 describe("Context Menu Interactions", () => {
   beforeEach(() => {
-    cy.visit("http://localhost:4001/?local=true");
+    cy.visit("http://localhost:4005/?local=true");
     cy.waitForWidgetReady();
   });
 

@@ -17,7 +17,7 @@ describe('Workbench Communication', () => {
     cy.get('#widgetFrame').should('be.visible');
     
     // Wait for iframe to load the widget
-    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4001/');
+    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4005/');
     
     // Wait for iframe to load completely
     cy.wait(2000);
@@ -75,7 +75,7 @@ describe('Workbench Communication', () => {
     // Check if iframe loads the widget - use a more robust approach
     cy.get('#widgetFrame').then(($iframe) => {
       // Wait for iframe to be loaded
-      cy.wrap($iframe).should('have.attr', 'src', 'http://localhost:4001/');
+      cy.wrap($iframe).should('have.attr', 'src', 'http://localhost:4005/');
       
       // Try to access iframe content
       cy.wrap($iframe).then(($iframe) => {
@@ -251,7 +251,7 @@ describe("Workbench Enhanced Event Handling", () => {
     // Wait for workbench to load and iframe to be ready
     cy.get('.workbench').should('be.visible');
     cy.get('#widgetFrame').should('be.visible');
-    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4001/');
+    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4005/');
     cy.wait(3000);
   });
 
@@ -345,7 +345,7 @@ describe("Multi-Panel Data Loading", () => {
     // Wait for workbench to load and iframe to be ready
     cy.get('.workbench').should('be.visible');
     cy.get('#widgetFrame').should('be.visible');
-    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4001/');
+    cy.get('#widgetFrame').should('have.attr', 'src', 'http://localhost:4005/');
     cy.wait(3000);
   });
 

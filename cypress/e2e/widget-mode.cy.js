@@ -146,7 +146,7 @@ describe("Widget Mode Communication", () => {
 
 describe("Widget Mode - Data Load Event Listener Leak", () => {
     it("should only load data once per trigger (no event listener leak)", () => {
-        cy.visit("http://localhost:4001/");
+        cy.visit("http://localhost:4005/");
         cy.waitForWidgetReady();
         cy.window().then((win) => {
             const widget = win.Widgets && win.Widgets.Widget;

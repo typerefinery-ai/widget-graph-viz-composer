@@ -6,11 +6,11 @@
 
 describe("Force Graph Interactions", () => {
   beforeEach(() => {
-    cy.visit("http://localhost:4001/?local=true");
+    cy.visit("http://localhost:4005/?local=true");
     cy.waitForWidgetReady();
     
     // Load test data for force graph - use local file instead of API
-    cy.intercept("GET", "http://localhost:4001/src/assets/data/tree-sighting.json", {
+    cy.intercept("GET", "http://localhost:4005/src/assets/data/tree-sighting.json", {
       fixture: "src/assets/data/tree-sighting.json"
     }).as("loadData");
     
