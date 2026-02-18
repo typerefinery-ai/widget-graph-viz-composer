@@ -405,7 +405,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         setTimeout(() => {
             if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.loadData === 'function') {
                 console.log('Triggering widget loadData to populate scratch panel');
-                window.Widgets.Widget.loadData(data);
+                window.Widgets.Widget.requestData();
             } else {
                 console.warn('Widget loadData function not available');
             }
