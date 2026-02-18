@@ -1,0 +1,24 @@
+{
+  "author": {
+    "id": null,
+    "is_bot": false,
+    "login": "brettforbes",
+    "name": "Brett Forbes"
+  },
+  "body": "## Short summary of the bug\n\nComposer Widget Does not Delete data in the promo or scratch DOM before new data is loaded.\n\n## Description\n\n### Steps to Reproduce\n1. Run Composer Widget\n2. Watch data get loaded twice in the Promo/Scratch SVGs, once on loading and once on loading the tree\n\n### Expected Behavior\nComposer deletes the items in DOM before loading the new data for Promo and Scratch.\n\n### Actual Behavior\nComposer writes the same data multiple times.\n\n## Background (local scenario)\n\nExamining the code in the `src/js` directory, the widget loads data through both `init()` and a refresh function, which must be run on changing of a radio button, or on the return data from an RMB menu event.\n\n## Problem\n\nThe `src/js/panel.tree.js` file has a `clearData()` function that clears the data in the tree view SVG's DOM before the new data is loaded. The force graphs in `src/js/panel.promo.js` and `src/js/panel.scratch.js` do not have a `clearData()` function that removes the current DOM data before loading the new data. Thus, when refresh is run, the new data loads on top of the old data.\n\n## Solution\n\nAdd `clearData()` (or equivalent DOM clearing) to the Promo and Scratch panels so that existing force-graph SVG elements (nodes, links, edge paths, edge labels) are removed before new data is rendered. Ensure this clear runs before loading new data (e.g. at the start of `showGraph()` or from `widget.loadData()` before calling panel showGraph). Restart the simulation after clearing so the force graph runs with the new data.\n\n## Source\n\n- **Source issue**: https://github.com/os-threat/os-threat-alpha-1-program/issues/91",
+  "closedAt": null,
+  "createdAt": "2026-01-28T00:00:00Z",
+  "labels": [
+    {
+      "id": null,
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    }
+  ],
+  "number": 91,
+  "state": "OPEN",
+  "title": "Composer Widget Does not Delete data in the promo or scratch DOM before new data is loaded",
+  "updatedAt": "2026-02-18T00:00:00Z",
+  "url": "https://github.com/os-threat/os-threat-alpha-1-program/issues/91"
+}

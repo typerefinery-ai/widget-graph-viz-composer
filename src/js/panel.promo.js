@@ -8,6 +8,28 @@ window.Widgets.Panel.Promo = {}
 
     ns.options = {};
 
+    /**
+     * Clear promo force-graph DOM elements before loading new data
+     */
+    ns.clearData = function() {
+        console.log("Clearing promo force-graph DOM");
+
+        if (!ns.promo_svg_root) {
+            console.warn("promo_svg_root not initialized, skipping clear");
+            return;
+        }
+
+        ns.promo_svg_root.selectAll('.plinks').remove();
+        ns.promo_svg_root.selectAll('.pedgepath').remove();
+        ns.promo_svg_root.selectAll('.pedgelabel').remove();
+        ns.promo_svg_root.selectAll('.pnodes').remove();
+
+        if (ns.promotable_sim) {
+            ns.promotable_sim.stop();
+            ns.promotable_sim = null;
+        }
+    };
+
     ns.menuItems = [
         {
             label: "Create SRO",
@@ -562,6 +584,8 @@ window.Widgets.Panel.Promo = {}
     ns.showGraph = function() {
         console.group(`Widgets.Panel.Promo.showGraph on ${window.location}`);
 
+        ns.clearData();
+
         if (!panelUtilsNs.split || !panelUtilsNs.split.promo || !panelUtilsNs.split.promo.edges) {
             console.error('No data to show');
             console.groupEnd();            
@@ -728,6 +752,8 @@ window.Widgets.Panel.Promo = {}
                 .force("charge", d3.forceManyBody().strength(-500)) // This adds repulsion (if it's negative) between nodes. 
                 .force("center", d3.forceCenter(ns.options.width / 2, ns.options.height / 2)); // This force attracts nodes to the center of the svg area
         }
+
+        ns.promotable_sim.alpha(1).restart();
 
           
         //create zoom handler  for each

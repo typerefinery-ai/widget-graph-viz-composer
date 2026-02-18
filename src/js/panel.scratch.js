@@ -8,7 +8,27 @@ window.Widgets.Panel.Scratch = {}
 
     ns.options = {};
 
-    
+    /**
+     * Clear scratch force-graph DOM elements before loading new data
+     */
+    ns.clearData = function() {
+        console.log("Clearing scratch force-graph DOM");
+
+        if (!ns.scratch_svg_root) {
+            console.warn("scratch_svg_root not initialized, skipping clear");
+            return;
+        }
+
+        ns.scratch_svg_root.selectAll('.slinks').remove();
+        ns.scratch_svg_root.selectAll('.sedgepath').remove();
+        ns.scratch_svg_root.selectAll('.sedgelabel').remove();
+        ns.scratch_svg_root.selectAll('.snodes').remove();
+
+        if (ns.scratch_sim) {
+            ns.scratch_sim.stop();
+            ns.scratch_sim = null;
+        }
+    };
 
     ns.menuItems = [
         {
@@ -167,6 +187,8 @@ window.Widgets.Panel.Scratch = {}
 
     ns.showGraph = function() {
         console.group(`Widgets.Panel.Scratch.showGraph on ${window.location}`);
+
+        ns.clearData();
 
         if (!panelUtilsNs.split || !panelUtilsNs.split.scratch || !panelUtilsNs.split.scratch.edges) {
             console.error('No data to show');
@@ -370,6 +392,7 @@ window.Widgets.Panel.Scratch = {}
         //     .links(panelUtilsNs.split.scratch.edges)
         //     .distance(function() {return 6 * ns.options.iconSize;});
 
+        ns.scratch_sim.alpha(1).restart();
 
         //create zoom handler  for each
         // ns.zoom_handler = d3.zoom().on('zoom', function(event, d) { 
