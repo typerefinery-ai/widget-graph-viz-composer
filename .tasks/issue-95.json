@@ -1,0 +1,26 @@
+{
+  "author": {
+    "id": null,
+    "is_bot": false,
+    "login": "brettforbes",
+    "name": "Brett Forbes"
+  },
+  "body": "## Short summary of the bug\n\nFix Widget left-select / Form open behaviour so Form data is filled, by sending form-ready data objects.\n\n## Description\n\nWhen an object is selected on the visualisation, it is a JSON object. The Form expects an object categorised into four dicts, based on their common form behaviour:\n\n- base_required\n- base_optional\n- object\n- extensions\n\nTo fix this we require the current data object from the left-select function to be sent through a filter before it goes out as a message. The filter would rearrange any property name and value pair into one of the four categories (pseudocode in issue description).\n\n## Steps to Reproduce\n\n1. Go to widget\n2. Left-select object\n3. Form appears but does not fill\n\n## Expected Behavior\n\nForm should fill.\n\n## Actual Behavior\n\nForm does not fill.\n\n## Source\n\n- **Source issue**: https://github.com/os-threat/os-threat-alpha-1-program/issues/95",
+  "closedAt": null,
+  "createdAt": "2026-02-06T03:01:40Z",
+  "labels": [
+    {
+      "id": null,
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    }
+  ],
+  "number": 95,
+  "state": "OPEN",
+  "title": "Fix Widget left-select / Form open behaviour so Form data is filled, by sending form-ready data objects",
+  "updatedAt": "2026-03-10T03:55:15Z",
+  "url": "https://github.com/os-threat/os-threat-alpha-1-program/issues/95",
+  "source_repo": "os-threat/os-threat-alpha-1-program",
+  "source_issue_number": 95
+}

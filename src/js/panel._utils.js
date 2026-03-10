@@ -263,6 +263,50 @@ window.Widgets.Events = window.Widgets.Events || {};
         }
     };
 
+    /**
+     * Categorise an uncategorised STIX-like data object into form-ready buckets:
+     * base_required, base_optional, object, extensions (per os-threat issue #95).
+     * @param {Object} dataObject - Raw node data (e.g. d.original)
+     * @returns {Object} { base_required, base_optional, object, extensions }
+     */
+    ns.categoriseFormData = function(dataObject) {
+        const base_required = ["id", "type", "spec_version", "created", "modified"];
+        const exception = ["created", "modified"];
+        const exceptionType = ["process", "file", "network-traffic", "x-oca-asset", "x-oca-event"];
+        const base_optional = ["created_by_ref", "revoked", "labels", "confidence", "lang", "external_references", "object_marking_refs", "granular_markings"];
+
+        const result = {
+            base_required: {},
+            base_optional: {},
+            object: {},
+            extensions: {}
+        };
+
+        if (!dataObject || typeof dataObject !== "object") {
+            return result;
+        }
+
+        const objectType = dataObject.type;
+
+        Object.keys(dataObject).forEach(function(propertyName) {
+            const propertyValue = dataObject[propertyName];
+
+            if (exception.indexOf(propertyName) !== -1 && exceptionType.indexOf(objectType) !== -1) {
+                result.object[propertyName] = propertyValue;
+            } else if (base_required.indexOf(propertyName) !== -1) {
+                result.base_required[propertyName] = propertyValue;
+            } else if (base_optional.indexOf(propertyName) !== -1) {
+                result.base_optional[propertyName] = propertyValue;
+            } else if (propertyName === "extensions") {
+                result.extensions = (propertyValue != null && typeof propertyValue === "object") ? propertyValue : {};
+            } else {
+                result.object[propertyName] = propertyValue;
+            }
+        });
+
+        return result;
+    };
+
     ns.leftclick = function(event, d) {
         console.group(`Widgets.Panel.Utils.leftclick on ${window.location}`);
         console.log("leftclick event->", event);
@@ -273,7 +317,7 @@ window.Widgets.Events = window.Widgets.Events || {};
             //raise event to load form for this content
             try {
                 const formId = "embed-viz-event-open-stixorm-forms-object"; //d.type
-                const formData = d.original;
+                const formData = ns.categoriseFormData(d.original || {});
                 //read config from node
                 const payloadOptions = {
                     "object_family": d.object_family,
