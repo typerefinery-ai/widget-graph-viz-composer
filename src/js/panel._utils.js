@@ -310,14 +310,14 @@ window.Widgets.Events = window.Widgets.Events || {};
     ns.leftclick = function(event, d) {
         console.group(`Widgets.Panel.Utils.leftclick on ${window.location}`);
         console.log("leftclick event->", event);
-        console.log("leftclick d->", d);
-
         try {
 
             //raise event to load form for this content
             try {
                 const formId = "embed-viz-event-open-stixorm-forms-object"; //d.type
                 const formData = ns.categoriseFormData(d.original || {});
+                console.log("leftclick formData->", formData);
+        
                 //read config from node
                 const payloadOptions = {
                     "object_family": d.object_family,
