@@ -55,6 +55,14 @@ window.Widgets.Panel.ForceGraph = {}
         const width = box && box.width ? box.width : 800;
         const height = box && box.height ? box.height : 280;
 
+        // Logged because layout faults here are otherwise invisible: the graph simply appears in
+        // the wrong place. Comparing this measurement against the panel size once the page has
+        // settled is what tells you whether the centre was computed too early.
+        console.log(
+            `ForceGraph.measurePanel: ${selector} -> ${Math.round(width)}x${Math.round(height)}` +
+            (box && box.height ? "" : " (FALLBACK - element not measurable yet)")
+        );
+
         if (!box || !box.height) {
             console.warn(`ForceGraph.measurePanel: could not measure ${selector}, using fallback`);
         }
@@ -137,6 +145,7 @@ window.Widgets.Panel.ForceGraph = {}
             // panel.scratch.js are still undefined at that point.
             ns.drawPanel("Promo", window.Widgets.Panel.Promo);
             ns.drawPanel("Scratch", window.Widgets.Panel.Scratch);
+
         } catch (error) {
             console.error("ForceGraph.showGraph failed", error);
         } finally {
