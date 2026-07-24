@@ -70,6 +70,52 @@ window.Widgets.Panel.ForceGraph = {}
     };
 
     /**
+     * Resize a panel's SVG to match the panel it lives in.
+     *
+     * panel.promo.js creates its SVG once during init with fixed pixel attributes taken from the
+     * panel's size at that moment (`.attr('width', $component.width())`). Nothing updates them
+     * afterwards, so when the panel ends up a different size - which it does inside the CMS
+     * iframe, measured at panel 759x466 versus svg 841x283 - the SVG stays stale. Everything
+     * below the stale height is clipped, and any layout measured from the SVG is anchored against
+     * the wrong box.
+     *
+     * Syncing here keeps the fix in one place rather than reworking each panel's init.
+     *
+     * @param {string} panelSelector selector for the panel element
+     * @returns {{width: number, height: number}|null} the panel size, or null if unavailable
+     */
+    ns.syncSvgToPanel = function (panelSelector) {
+        const panel = document.querySelector(panelSelector);
+        const svg = panel && panel.querySelector("svg");
+        if (!panel || !svg) {
+            return null;
+        }
+
+        const box = panel.getBoundingClientRect();
+        if (!box.width || !box.height) {
+            return null;
+        }
+
+        const width = Math.round(box.width);
+        const height = Math.round(box.height);
+        const currentWidth = Math.round(svg.getBoundingClientRect().width);
+        const currentHeight = Math.round(svg.getBoundingClientRect().height);
+
+        if (currentWidth === width && currentHeight === height) {
+            return { width: width, height: height };
+        }
+
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        console.log(
+            `ForceGraph.syncSvgToPanel: ${panelSelector} svg ${currentWidth}x${currentHeight} ` +
+            `-> ${width}x${height} (panel size)`
+        );
+
+        return { width: width, height: height };
+    };
+
+    /**
      * Give every promo node a usable layout position.
      *
      * panel.promo.js drives forceX/forceY from node.positionX/positionY. `/viz-data/unattached-split`
@@ -136,6 +182,11 @@ window.Widgets.Panel.ForceGraph = {}
             // The panel renderers read from panelUtilsNs.split rather than taking an argument,
             // so make sure it reflects what we were asked to draw.
             panelUtilsNs.split = data;
+
+            // Bring each SVG up to its panel's current size before anything measures or draws,
+            // otherwise the layout is anchored against a stale box and clipped by it.
+            ns.syncSvgToPanel("#promo_panel");
+            ns.syncSvgToPanel("#scratch_panel");
 
             ns.applyLayout(data.promo);
 
