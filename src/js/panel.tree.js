@@ -463,12 +463,30 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
 
 
     /**
+     * How many times to re-ask the parent for data before giving up, and how long to wait
+     * between attempts.
+     *
+     * The widget requests its data as soon as it starts, which can be before the host page
+     * has finished wiring up the listener that answers it. A request sent into that gap is
+     * simply lost - the host never sees it - so a single attempt leaves the panel stuck on
+     * "Loading ... from parent" until it times out, even though the host would answer
+     * happily a moment later.
+     */
+    ns.PARENT_REQUEST_MAX_ATTEMPTS = 4;
+    ns.PARENT_REQUEST_RETRY_DELAY_MS = 2000;
+
+    /**
      * Load tree data from parent application (widget mode)
      * @param {string} type - The tree data type (sighting, task, impact, event, me, company)
+     * @param {number} [attempt] - 1-based attempt number, used internally when retrying
      */
-    ns.loadTreeDataFromParent = function(type) {
+    ns.loadTreeDataFromParent = function(type, attempt) {
         console.group(`Widgets.Panel.Tree.loadTreeDataFromParent on ${window.location}`);
-        
+
+        const attemptNumber = attempt || 1;
+        const isFinalAttempt = attemptNumber >= ns.PARENT_REQUEST_MAX_ATTEMPTS;
+        console.log(`Attempt ${attemptNumber} of ${ns.PARENT_REQUEST_MAX_ATTEMPTS} for type: ${type}`);
+
         const eventName = `embed-viz-event-payload-data-tree-${type}`;
         const topics = [`embed-viz-event-payload-data-tree-${type}`];
         
@@ -494,18 +512,39 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
             timeoutDuration = isTestEnvironment ? 5000 : 30000; // 5s for tests, 30s for production
             console.log(`Using timeout duration: ${timeoutDuration}ms (${isTestEnvironment ? 'test' : 'production'} environment)`);
         }
+
+        // Early attempts exist to recover from a request that raced the host page's setup,
+        // which resolves in well under a second. Only the final attempt keeps the full
+        // patience, so a genuinely slow host is still given its 30s - but a lost request is
+        // retried in seconds rather than after the whole timeout.
+        if (!isFinalAttempt) {
+            timeoutDuration = Math.min(timeoutDuration, 4000);
+            console.log(`Non-final attempt, shortening timeout to ${timeoutDuration}ms`);
+        }
         
         // Set up timeout for parent response
         const timeoutId = setTimeout(() => {
-            console.warn(`Timeout waiting for parent response for type: ${type} after ${timeoutDuration}ms`);
+            console.warn(`Timeout waiting for parent response for type: ${type} after ${timeoutDuration}ms (attempt ${attemptNumber})`);
+
+            // A request that raced the host page's setup is lost rather than refused, so
+            // re-ask before treating it as a failure.
+            if (!isFinalAttempt) {
+                console.log(`Retrying request for type: ${type} in ${ns.PARENT_REQUEST_RETRY_DELAY_MS}ms`);
+                setTimeout(() => {
+                    ns.loadTreeDataFromParent(type, attemptNumber + 1);
+                }, ns.PARENT_REQUEST_RETRY_DELAY_MS);
+                console.groupEnd();
+                return;
+            }
+
             ns.hideLoadingState();
-            
+
             // Show different error messages for test vs production
             const isTestEnvironment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const errorMessage = isTestEnvironment 
+            const errorMessage = isTestEnvironment
                 ? "Failed to load tree data from parent application - timeout"
                 : `Parent application is taking longer than expected to respond or may not support this event type [<b><i>${eventName}</i></b>] of data. Please try again or contact support if the issue persists.`;
-            
+
             ns.showErrorMessage(errorMessage);
             panelUtilsNs.showNotification('error', errorMessage);
             console.groupEnd();
