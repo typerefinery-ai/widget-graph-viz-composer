@@ -30,11 +30,18 @@ window.Widgets.Panel.Promo = {}
         }
     };
 
-    ns.menuItems = [
-        {
-            label: "Create SRO",
-            icon: '<i class="fa-regular fa-handshake"></i>',
-            action: () => {
+
+    /**
+     * Create an SRO between the two selected objects.
+     *
+     * Deliberately panel-agnostic: it reads only the SHARED selection tracker
+     * (panelUtilsNs.selection) and raises events - it touches no Promo-specific state. The
+     * Scratch panel calls this same function, because having two copies of this menu item is
+     * exactly what caused os-threat#93 / #23: Scratch's copy skipped the types lookup and sent the raw
+     * selection array, so its modal opened with no source, target or relationship type.
+     * See alpha-launch docs/issues/0015.
+     */
+    ns.actionCreateSRO = () => {
                 const contextData = panelUtilsNs.getContentMenuData();
                 console.log("raising event to open create Force SRO form", contextData);
                 console.log("panelUtilsNs.selection", panelUtilsNs.selection);
@@ -140,12 +147,19 @@ window.Widgets.Panel.Promo = {}
                 } else {
                     console.error("Two objects must be selected");
                 }
-            },
-        },
-        {
-            label: "Create Connection",
-            icon: '<i class="fa-regular fa-handshake"></i>',
-            action: () => {
+            };
+
+    /**
+     * Create a foreign-key connection between the two selected objects.
+     *
+     * Deliberately panel-agnostic: it reads only the SHARED selection tracker
+     * (panelUtilsNs.selection) and raises events - it touches no Promo-specific state. The
+     * Scratch panel calls this same function, because having two copies of this menu item is
+     * exactly what caused os-threat#93 / #24: Scratch's copy skipped the types lookup and sent the raw
+     * selection array, so its modal opened with no source, target or relationship type.
+     * See alpha-launch docs/issues/0015.
+     */
+    ns.actionCreateConnection = () => {
                 const contextData = panelUtilsNs.getContentMenuData();
                 console.log("raising event to open create Force Connection form", contextData);
                 console.log("panelUtilsNs.selection", panelUtilsNs.selection);
@@ -250,7 +264,18 @@ window.Widgets.Panel.Promo = {}
                 } else {
                     console.error("Two objects must be selected");
                 }
-            },
+            };
+
+    ns.menuItems = [
+        {
+            label: "Create SRO",
+            icon: '<i class="fa-regular fa-handshake"></i>',
+            action: () => ns.actionCreateSRO(),
+        },
+        {
+            label: "Create Connection",
+            icon: '<i class="fa-regular fa-handshake"></i>',
+            action: () => ns.actionCreateConnection(),
         },
         {
             label: "Remove",
