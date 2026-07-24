@@ -80,13 +80,28 @@ window.Widgets.Panel.Promo = {}
                     let getRelationshipTypesCallback = function(id, eventData, eventHandlerId) {
                         console.groupCollapsed(`widget getRelationshipTypesCallback on ${window.location}`);
 
-                        //TODO: extract data from eventData to prepare for the form, this need to match the form fields
+                        // Shape must match the modal's field structure: sro-constraints nests its
+                        // fields inside an "object" composite, so the payload is nested to match.
+                        // (foreign-key-connections is flat - see getConnectionTypesCallback.)
                         let dataForForm = {
                             object: {
                                 relationship_type: eventData.data.relationship_type_list,
                                 source_ref: eventData.data.reln_form_values.source_ref,
-                                target_ref: eventData.data.reln_form_values.target_ref,    
+                                target_ref: eventData.data.reln_form_values.target_ref,
                             }
+                        }
+
+                        console.log(
+                            "getRelationshipTypesCallback -> dataForForm " +
+                            `source_ref=${dataForForm.object.source_ref} target_ref=${dataForForm.object.target_ref} ` +
+                            `types=${Array.isArray(dataForForm.object.relationship_type) ? dataForForm.object.relationship_type.length : typeof dataForForm.object.relationship_type}`
+                        );
+                        if (!dataForForm.object.source_ref || !dataForForm.object.target_ref) {
+                            console.error(
+                                "getRelationshipTypesCallback: no source/target to send - the modal will open empty. " +
+                                "Expected eventData.data.reln_form_values.{source_ref,target_ref}, got:",
+                                eventData && eventData.data
+                            );
                         }
 
                         // callback that will be called when the form modal is finished
@@ -196,13 +211,31 @@ window.Widgets.Panel.Promo = {}
                     let getConnectionTypesCallback = function(id, eventData, eventHandlerId) {
                         console.groupCollapsed(`widget getConnectionTypesCallback on ${window.location}`);
 
-                        //TODO: extract data from eventData to prepare for the form, this need to match the form fields
+                        // This must match the FIELD STRUCTURE of the modal it opens, and the two
+                        // modals are not shaped the same:
+                        //   sro-constraints        -> fields sit inside an "object" composite
+                        //   foreign-key-connections -> fields sit at the TOP LEVEL, and the type
+                        //                              field is named connection_field_list
+                        // The form binds payload keys to field names by name, so wrapping these in
+                        // "object" (copied from the SRO callback) meant nothing matched and the
+                        // modal opened completely empty. See alpha-launch docs/issues/0018.
                         let dataForForm = {
-                            object: {
-                                connection_type: eventData.data.connection_type_list,
-                                source_ref: eventData.data.connect_objects.source_ref,
-                                target_ref: eventData.data.connect_objects.target_ref,    
-                            }
+                            connection_field_list: eventData.data.connection_type_list,
+                            source_ref: eventData.data.connect_objects.source_ref,
+                            target_ref: eventData.data.connect_objects.target_ref,
+                        }
+
+                        console.log(
+                            "getConnectionTypesCallback -> dataForForm " +
+                            `source_ref=${dataForForm.source_ref} target_ref=${dataForForm.target_ref} ` +
+                            `types=${Array.isArray(dataForForm.connection_field_list) ? dataForForm.connection_field_list.length : typeof dataForForm.connection_field_list}`
+                        );
+                        if (!dataForForm.source_ref || !dataForForm.target_ref) {
+                            console.error(
+                                "getConnectionTypesCallback: no source/target to send - the modal will open empty. " +
+                                "Expected eventData.data.connect_objects.{source_ref,target_ref}, got:",
+                                eventData && eventData.data
+                            );
                         }
 
                         // callback that will be called when the form modal is finished
