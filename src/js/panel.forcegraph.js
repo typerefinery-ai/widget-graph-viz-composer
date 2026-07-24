@@ -146,10 +146,72 @@ window.Widgets.Panel.ForceGraph = {}
             ns.drawPanel("Promo", window.Widgets.Panel.Promo);
             ns.drawPanel("Scratch", window.Widgets.Panel.Scratch);
 
+            // Settle both layouts synchronously - see settle() for why waiting on the animation
+            // timer is not enough.
+            ns.settle("Promo", window.Widgets.Panel.Promo, "promotable_sim");
+            ns.settle("Scratch", window.Widgets.Panel.Scratch, "scratch_sim");
+
         } catch (error) {
             console.error("ForceGraph.showGraph failed", error);
         } finally {
             console.groupEnd();
+        }
+    };
+
+    /** How many steps to run when settling a layout synchronously. */
+    ns.SETTLE_TICKS = 150;
+
+    /**
+     * Run a panel's force simulation to a settled layout, synchronously.
+     *
+     * `showGraph()` ends with `simulation.alpha(1).restart()` and then relies on d3's animation
+     * timer to do the work. Measured here, that timer never runs: alpha sat at exactly 1.000 for
+     * seconds on end and every node stayed on its initial phyllotaxis position around the origin,
+     * which is what made Promotable look like a small clump jammed against the top of the panel.
+     *
+     * The forces themselves are correct - stepping the same simulation by hand moved the nodes
+     * from (7,0) to a proper spread across the panel, centred on the anchor. So rather than
+     * depending on an animation frame that may never be delivered (background tabs and automated
+     * browsers both throttle rAF), step the simulation to completion here. These graphs are small
+     * - tens of nodes - so this costs a few milliseconds.
+     *
+     * Interaction is unaffected: dragging still calls alphaTarget().restart() as before.
+     *
+     * @param {string} name panel name, for logging
+     * @param {object} panelNs panel namespace holding the simulation
+     * @param {string} simProperty property on that namespace holding the d3 simulation
+     */
+    ns.settle = function (name, panelNs, simProperty) {
+        const sim = panelNs && panelNs[simProperty];
+        if (!sim || typeof sim.tick !== "function") {
+            return;
+        }
+
+        try {
+            for (let i = 0; i < ns.SETTLE_TICKS; i++) {
+                sim.tick();
+            }
+
+            // simulation.tick() advances the layout but deliberately does NOT dispatch the "tick"
+            // event, so the SVG still shows the pre-settle positions. Invoke the panel's own tick
+            // handler once to paint the final result.
+            const onTick = sim.on("tick");
+            if (typeof onTick === "function") {
+                onTick.call(sim);
+            } else {
+                console.warn(`ForceGraph.settle: ${name} has no tick handler, layout not painted`);
+            }
+
+            // Stop it so the (possibly never-running) timer cannot re-heat and undo this.
+            if (typeof sim.stop === "function") {
+                sim.stop();
+            }
+            console.log(
+                `ForceGraph.settle: ${name} settled over ${ns.SETTLE_TICKS} ticks ` +
+                `(alpha now ${sim.alpha().toFixed(3)})`
+            );
+        } catch (error) {
+            console.error(`ForceGraph.settle: ${name} failed to settle`, error);
         }
     };
 
