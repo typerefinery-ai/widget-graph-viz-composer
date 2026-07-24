@@ -438,7 +438,17 @@ window.Widgets.Panel.Scratch = {}
         d3.select(this).classed("fixed", d.fixed = false);
             d.fx = null;
             d.fy = null;
-        if (!event.active) ns.scratch_sim.alphaTarget(0.9);
+        // See Promo.releasenode - alphaTarget is what alpha decays *towards*, so leaving it at
+        // 0.9 meant the simulation could never come to rest. Kick alpha once instead.
+        if (!event.active) {
+            ns.scratch_sim.alphaTarget(0).alpha(0.9);
+            const forceGraphNs = window.Widgets.Panel.ForceGraph;
+            if (forceGraphNs && typeof forceGraphNs.settle === "function") {
+                forceGraphNs.settle("Scratch", ns, "scratch_sim");
+            } else {
+                console.warn("releasenode: ForceGraph.settle unavailable, layout will not re-settle");
+            }
+        }
     console.groupEnd();
     }
 

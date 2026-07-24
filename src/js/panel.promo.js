@@ -800,7 +800,22 @@ window.Widgets.Panel.Promo = {}
         d3.select(this).classed("fixed", d.fixed = false);
         d.fx = null;
         d.fy = null;
-        if (!event.active) ns.promotable_sim.alphaTarget(0.9);
+        // Re-heat once so the freed node can find a new position, then let alpha decay back to
+        // rest. This used to set alphaTarget(0.9) and never clear it - alphaTarget is the value
+        // alpha decays *towards*, so the simulation could never fall below 0.9 and would run
+        // forever, burning CPU and leaving nodes permanently in motion.
+        if (!event.active) {
+            ns.promotable_sim.alphaTarget(0).alpha(0.9);
+            // Step the layout here rather than calling restart(): d3's animation timer does not
+            // run in this widget (see ForceGraph.settle), so a restart() alone leaves alpha
+            // pinned at 0.9 and nothing ever moves or comes to rest.
+            const forceGraphNs = window.Widgets.Panel.ForceGraph;
+            if (forceGraphNs && typeof forceGraphNs.settle === "function") {
+                forceGraphNs.settle("Promo", ns, "promotable_sim");
+            } else {
+                console.warn("releasenode: ForceGraph.settle unavailable, layout will not re-settle");
+            }
+        }
         console.groupEnd();
     }
 
