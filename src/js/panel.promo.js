@@ -219,10 +219,17 @@ window.Widgets.Panel.Promo = {}
                         // The form binds payload keys to field names by name, so wrapping these in
                         // "object" (copied from the SRO callback) meant nothing matched and the
                         // modal opened completely empty. See alpha-launch docs/issues/0018.
+                        // The API returns the list as connection_field_list - the same name the form
+                        // field uses - not connection_type_list. Verified against the algorithm's
+                        // own output:
+                        //   {"connection_field_list": ["created_by_ref"],
+                        //    "connect_objects": {"source_ref": "...", "target_ref": "..."}}
+                        // Reading the wrong key left the dropdown empty with everything else correct.
+                        const connectObjects = (eventData.data && eventData.data.connect_objects) || {};
                         let dataForForm = {
-                            connection_field_list: eventData.data.connection_type_list,
-                            source_ref: eventData.data.connect_objects.source_ref,
-                            target_ref: eventData.data.connect_objects.target_ref,
+                            connection_field_list: eventData.data.connection_field_list,
+                            source_ref: connectObjects.source_ref,
+                            target_ref: connectObjects.target_ref,
                         }
 
                         console.log(
