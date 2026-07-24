@@ -138,16 +138,20 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
                 throw new Error("executeTreeMenuAction: unable to determine tree type for refresh");
             }
 
-            // Prepare event payload and metadata for the parent application
+            // Prepare event payload and metadata for the parent application.
+            // payload.data is what the host embed POSTs verbatim to the configured API, and the
+            // rmb-tree algorithms unwrap tree_object["original"] - so send the node's own data
+            // object (which carries `original`), not a reshaped wrapper. treeType stays in the
+            // closure (callbackContext) for the refresh; the API does not need it.
+            const apiObject = (nodeData && typeof nodeData.original === "object")
+                ? nodeData
+                : { original: originalData };
             const componentId = `${actionConfig.eventName}::tree-panel`;
             const payload = {
                 action: actionConfig.eventName,
                 id: componentId,
                 type: "tree_action",
-                data: {
-                    node: payloadNode,
-                    treeType: callbackContext.treeType,
-                },
+                data: apiObject,
             };
             const eventData = eventsNs.compileEventData(
                 payload,
@@ -207,10 +211,19 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
                 }
 
                 const payloadResponse = response?.payload;
-                const status = typeof payloadResponse?.status === "string" ? payloadResponse.status : "unknown";
+                // Accept both reply shapes: an explicit payload.status, or the host embed's
+                // DATA_PAYLOAD contract ({ok: true, data: <api response>} merged into the
+                // original event) - the embed is what actually answers these requests
+                // (alpha-launch docs/issues/0007 criterion 2).
+                let status = typeof payloadResponse?.status === "string" ? payloadResponse.status : "unknown";
+                if (status === "unknown" && typeof response?.ok === "boolean") {
+                    status = response.ok ? "success" : "error";
+                }
                 console.log("Tree menu action response status", {
                     action: actionConfig.eventName,
                     status: status,
+                    ok: response?.ok,
+                    apiData: response?.data,
                     rawPayload: payloadResponse,
                 });
                 if (status === "success") {
