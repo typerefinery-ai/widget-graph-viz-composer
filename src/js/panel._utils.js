@@ -218,8 +218,14 @@ window.Widgets.Events = window.Widgets.Events || {};
             return removedData;
         },
         clear: function() {
+            // ids must be reset alongside list/ref - count() and isFull() read ids, so
+            // leaving it populated made a cleared tracker still report itself as full and
+            // silently reject the next selection.
+            const clearedCount = this.ids.length;
             this.list = [];
+            this.ids = [];
             this.ref = {};
+            console.log(`selection cleared, dropped ${clearedCount} item(s)`);
         },
         isFull: function() {
             return this.ids.length === this.max;
