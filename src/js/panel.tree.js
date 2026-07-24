@@ -759,7 +759,26 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
             console.log('vbox.height->', newHeight)
             console.log('ns.$svg.height()->', ns.$svg.height())
             
-            ns.$svg.attr('width', newWidth)
+            // Clamp the width to the panel. newWidth is derived from the tree's bounding box, so a
+            // wide tree made the SVG wider than the panel holding it - measured at svg 314px inside
+            // a 285px panel - which is what put a horizontal scrollbar under the panel and let the
+            // "Evidence List" heading collide with the node icons.
+            //
+            // Height is deliberately left content-driven and grow-only: a tree taller than its
+            // panel must still be reachable by scrolling vertically, so clamping it would hide
+            // nodes rather than reveal them.
+            const panelWidth = ns.$container && ns.$container.get(0)
+                ? ns.$container.get(0).clientWidth
+                : 0;
+            const clampedWidth = panelWidth > 0 ? Math.min(newWidth, panelWidth) : newWidth;
+
+            if (clampedWidth !== newWidth) {
+                console.log(
+                    `tree svg width clamped to panel: ${Math.round(newWidth)} -> ${Math.round(clampedWidth)}`
+                );
+            }
+
+            ns.$svg.attr('width', clampedWidth)
 
             if (newHeight > ns.$svg.height()) {
                 ns.$svg.attr('height', newHeight)
