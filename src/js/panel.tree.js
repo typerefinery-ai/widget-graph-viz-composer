@@ -476,6 +476,46 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
     ns.PARENT_REQUEST_RETRY_DELAY_MS = 2000;
 
     /**
+     * Per-type request state, keyed by tree type.
+     *
+     * The state has to be shared across attempts rather than held in each attempt's closure:
+     * raiseEventDataRequest() only registers the *first* callback for a given component id, so
+     * the callback that actually fires belongs to attempt 1 and cannot see the timers created
+     * by later attempts. Without shared state those timers are never cancelled - the retry
+     * chain keeps running after the data has arrived, re-requesting (which looks like the
+     * panel reloading itself) and finally reporting a timeout for a request that succeeded.
+     *
+     * `generation` distinguishes request cycles, so a response to a superseded cycle - for
+     * example the initial load landing after the user has clicked something else - is ignored
+     * instead of overwriting what is now on screen.
+     */
+    ns.parentRequestState = {};
+
+    ns.getParentRequestState = function(type) {
+        if (!ns.parentRequestState[type]) {
+            ns.parentRequestState[type] = {
+                generation: 0,
+                timeoutId: null,
+                retryTimerId: null,
+                settled: false
+            };
+        }
+        return ns.parentRequestState[type];
+    };
+
+    /** Stop any timer still pending for this type. */
+    ns.clearParentRequestTimers = function(state) {
+        if (state.timeoutId) {
+            clearTimeout(state.timeoutId);
+            state.timeoutId = null;
+        }
+        if (state.retryTimerId) {
+            clearTimeout(state.retryTimerId);
+            state.retryTimerId = null;
+        }
+    };
+
+    /**
      * Load tree data from parent application (widget mode)
      * @param {string} type - The tree data type (sighting, task, impact, event, me, company)
      * @param {number} [attempt] - 1-based attempt number, used internally when retrying
@@ -485,7 +525,18 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
 
         const attemptNumber = attempt || 1;
         const isFinalAttempt = attemptNumber >= ns.PARENT_REQUEST_MAX_ATTEMPTS;
-        console.log(`Attempt ${attemptNumber} of ${ns.PARENT_REQUEST_MAX_ATTEMPTS} for type: ${type}`);
+        const state = ns.getParentRequestState(type);
+
+        if (!attempt) {
+            // A fresh request cycle (initial load, a tab change or a user click) supersedes
+            // anything still in flight for this type.
+            ns.clearParentRequestTimers(state);
+            state.generation += 1;
+            state.settled = false;
+        }
+        const generation = state.generation;
+
+        console.log(`Attempt ${attemptNumber} of ${ns.PARENT_REQUEST_MAX_ATTEMPTS} for type: ${type} (generation ${generation})`);
 
         const eventName = `embed-viz-event-payload-data-tree-${type}`;
         const topics = [`embed-viz-event-payload-data-tree-${type}`];
@@ -523,14 +574,27 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         }
         
         // Set up timeout for parent response
-        const timeoutId = setTimeout(() => {
+        state.timeoutId = setTimeout(() => {
+            state.timeoutId = null;
+
+            // Ignore a timeout for a cycle that has already been answered or superseded.
+            if (state.settled || generation !== state.generation) {
+                console.log(`Ignoring stale timeout for type: ${type} (generation ${generation})`);
+                console.groupEnd();
+                return;
+            }
+
             console.warn(`Timeout waiting for parent response for type: ${type} after ${timeoutDuration}ms (attempt ${attemptNumber})`);
 
             // A request that raced the host page's setup is lost rather than refused, so
             // re-ask before treating it as a failure.
             if (!isFinalAttempt) {
                 console.log(`Retrying request for type: ${type} in ${ns.PARENT_REQUEST_RETRY_DELAY_MS}ms`);
-                setTimeout(() => {
+                state.retryTimerId = setTimeout(() => {
+                    state.retryTimerId = null;
+                    if (state.settled || generation !== state.generation) {
+                        return;
+                    }
                     ns.loadTreeDataFromParent(type, attemptNumber + 1);
                 }, ns.PARENT_REQUEST_RETRY_DELAY_MS);
                 console.groupEnd();
@@ -553,10 +617,14 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
         // Raise event to load data from parent
         window.Widgets.Widget.raiseEventDataRequest(eventName, topics, "load_data", type, (eventData) => {
             console.log(`Tree data response received for type: ${type}`, eventData);
-            
-            // Clear timeout since we got a response
-            clearTimeout(timeoutId);
-            
+
+            // A response settles the whole cycle, so stop the pending timeout *and* any retry
+            // already scheduled. This callback belongs to the first attempt and is the only
+            // one that ever runs, so cancelling through the shared state is what stops a
+            // retry chain from continuing after the data has arrived.
+            ns.clearParentRequestTimers(state);
+            state.settled = true;
+
             // Hide loading state
             ns.hideLoadingState();
             
