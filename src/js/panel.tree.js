@@ -139,9 +139,10 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
             }
 
             // Prepare event payload and metadata for the parent application.
-            // payload.data is what the host embed POSTs verbatim to the configured API, and the
-            // rmb-tree algorithms unwrap tree_object["original"] - so send the node's own data
-            // object (which carries `original`), not a reshaped wrapper. treeType stays in the
+            // payload.data is what the host embed POSTs verbatim to the configured API. The
+            // rmb-tree algorithm's message port wraps the body as {"api": <body>} and its api
+            // branch reads api["tree_object"], whose own reader unwraps ["original"] - so the
+            // body must be {tree_object: <node carrying original>}. treeType stays in the
             // closure (callbackContext) for the refresh; the API does not need it.
             const apiObject = (nodeData && typeof nodeData.original === "object")
                 ? nodeData
@@ -151,7 +152,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
                 action: actionConfig.eventName,
                 id: componentId,
                 type: "tree_action",
-                data: apiObject,
+                data: { tree_object: apiObject },
             };
             const eventData = eventsNs.compileEventData(
                 payload,
