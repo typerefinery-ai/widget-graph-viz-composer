@@ -295,6 +295,71 @@ window.Widgets.Events = window.Widgets.Events || {};
         );
     };
 
+    // --- form data categorisation (os-threat#95) --------------------------------
+    // A selected object arrives as flat STIX JSON, but the form expects it split into four
+    // dicts by how each property behaves in the form. Sending the flat object leaves most
+    // fields blank - only the handful whose names happen to line up get populated.
+    ns.FORM_BASE_REQUIRED = ["id", "type", "spec_version", "created", "modified"];
+    ns.FORM_BASE_OPTIONAL = [
+        "created_by_ref", "revoked", "labels", "confidence", "lang",
+        "external_references", "object_marking_refs", "granular_markings"
+    ];
+    // For these types, created/modified describe the observed object rather than the STIX
+    // record, so they belong with the object body instead of the required base.
+    ns.FORM_TIMESTAMP_EXCEPTIONS = ["created", "modified"];
+    ns.FORM_EXCEPTION_TYPES = ["process", "file", "network-traffic", "x-oca-asset", "x-oca-event"];
+
+    /**
+     * Split a flat STIX object into the four dicts the form expects.
+     *
+     * @param {object} dataObject flat STIX object, as held on the graph node
+     * @returns {{base_required: object, base_optional: object, object: object, extensions: object}}
+     */
+    ns.categoriseFormData = function(dataObject) {
+        const categorised = {
+            base_required: {},
+            base_optional: {},
+            object: {},
+            extensions: {}
+        };
+
+        if (!dataObject || typeof dataObject !== "object") {
+            console.warn("categoriseFormData: no object to categorise", dataObject);
+            return categorised;
+        }
+
+        const objectType = dataObject.type;
+        const isExceptionType = ns.FORM_EXCEPTION_TYPES.indexOf(objectType) > -1;
+
+        Object.keys(dataObject).forEach(function(propertyName) {
+            const propertyValue = dataObject[propertyName];
+
+            if (isExceptionType && ns.FORM_TIMESTAMP_EXCEPTIONS.indexOf(propertyName) > -1) {
+                categorised.object[propertyName] = propertyValue;
+            } else if (ns.FORM_BASE_REQUIRED.indexOf(propertyName) > -1) {
+                categorised.base_required[propertyName] = propertyValue;
+            } else if (ns.FORM_BASE_OPTIONAL.indexOf(propertyName) > -1) {
+                categorised.base_optional[propertyName] = propertyValue;
+            } else if (propertyName === "extensions") {
+                categorised.extensions = propertyValue;
+            } else {
+                categorised.object[propertyName] = propertyValue;
+            }
+        });
+
+        console.log(
+            `categoriseFormData: type=${objectType} -> ` +
+            `base_required(${Object.keys(categorised.base_required).length}) ` +
+            `base_optional(${Object.keys(categorised.base_optional).length}) ` +
+            `object(${Object.keys(categorised.object).length}) ` +
+            `extensions(${Object.keys(categorised.extensions || {}).length})` +
+            (isExceptionType ? " [created/modified treated as object properties]" : "")
+        );
+
+        return categorised;
+    };
+    // ----------------------------------------------------------------------------
+
     ns.leftclick = function(event, d) {
         console.group(`Widgets.Panel.Utils.leftclick on ${window.location}`);
         console.log("leftclick event->", event);
@@ -305,7 +370,7 @@ window.Widgets.Events = window.Widgets.Events || {};
             //raise event to load form for this content
             try {
                 const formId = "embed-viz-event-open-stixorm-forms-object"; //d.type
-                const formData = d.original;
+                const formData = ns.categoriseFormData(d.original);
                 //read config from node
                 const payloadOptions = {
                     "object_family": d.object_family,
