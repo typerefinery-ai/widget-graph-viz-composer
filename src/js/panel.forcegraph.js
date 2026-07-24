@@ -17,6 +17,109 @@ window.Widgets.Panel.ForceGraph = {}
 ;(function ($, ns, panelUtilsNs, document, window) {
     "use strict";
 
+    // ------------------------------------------------------------------------------------
+    // Simulation lifecycle instrumentation
+    //
+    // The widget runs in an iframe on a different origin to its host page, so when it is
+    // embedded neither its console nor its simulation state can be read from the outside.
+    // That blindness is what made docs/issues/0016 (the Promotable graph never settling)
+    // impossible to diagnose: every hypothesis about *what restarts the simulation* needs
+    // to see restart/tick counts from inside the widget.
+    //
+    // Counts are always collected - they cost a increment per tick. Add ?debugSim=1 to the
+    // widget URL to also draw them on screen, which is readable from a screenshot and so
+    // works across the origin boundary.
+    // ------------------------------------------------------------------------------------
+
+    ns.DEBUG_SIM = /[?&]debugSim=1/.test(window.location.search);
+
+    /** Per-panel lifecycle counters, keyed by panel name. */
+    ns.simStats = {};
+
+    /** showGraph call/outcome counters - a run that does not complete leaves a live simulation. */
+    ns.showGraphRuns = { calls: 0, completed: 0, bailed: 0, lastError: null };
+
+    /**
+     * Count restart/stop/tick on a simulation so its lifecycle is observable.
+     *
+     * @param {string} name panel name
+     * @param {object} sim d3 force simulation
+     */
+    ns.instrumentSim = function (name, sim) {
+        if (!sim || sim.__instrumented) {
+            return sim;
+        }
+
+        const stats = { ticks: 0, manualTicks: 0, restarts: 0, stops: 0, created: (ns.simStats[name] || {}).created + 1 || 1 };
+        ns.simStats[name] = stats;
+
+        const originalRestart = sim.restart;
+        const originalStop = sim.stop;
+        const originalTick = sim.tick;
+
+        sim.restart = function () {
+            stats.restarts += 1;
+            return originalRestart.apply(sim, arguments);
+        };
+        sim.stop = function () {
+            stats.stops += 1;
+            return originalStop.apply(sim, arguments);
+        };
+        // simulation.tick() advances alpha without dispatching the "tick" event, so a direct
+        // caller is invisible to the listener below. Count it separately - the difference
+        // between manualTicks and ticks is exactly "who is advancing this simulation".
+        sim.tick = function () {
+            stats.manualTicks += 1;
+            return originalTick.apply(sim, arguments);
+        };
+
+        // Namespaced listener so it cannot clobber the panel's own "tick" handler, which
+        // settle() looks up as sim.on("tick").
+        sim.on("tick.simstats", function () {
+            stats.ticks += 1;
+        });
+
+        sim.__instrumented = true;
+        console.log(`ForceGraph.instrumentSim: ${name} instrumented (simulation #${stats.created})`);
+        return sim;
+    };
+
+    /** Draw the counters on screen. Only called when ?debugSim=1. */
+    ns.renderSimDebug = function () {
+        let el = document.getElementById("sim-debug-readout");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "sim-debug-readout";
+            el.setAttribute("style",
+                "position:fixed;top:0;right:0;z-index:99999;background:rgba(0,0,0,.82);color:#0f0;" +
+                "font:11px/1.35 monospace;padding:6px 8px;white-space:pre;pointer-events:none;");
+            document.body.appendChild(el);
+        }
+
+        const lines = Object.keys(ns.simStats).map(function (name) {
+            const s = ns.simStats[name];
+            const panelNs = window.Widgets.Panel[name];
+            const sim = panelNs && (panelNs.promotable_sim || panelNs.scratch_sim);
+            const alpha = sim && typeof sim.alpha === "function" ? sim.alpha().toFixed(4) : "?";
+            const target = sim && typeof sim.alphaTarget === "function" ? sim.alphaTarget() : "?";
+            return `${name}: a=${alpha} tgt=${target} inst=${!!(sim && sim.__instrumented)} settle ${s.settleFrom}->${s.settleTo} evt=${s.ticks} man=${s.manualTicks} rst=${s.restarts} stp=${s.stops} sims=${s.created}`;
+        });
+
+        const r = ns.showGraphRuns;
+        const header = `showGraph calls=${r.calls} completed=${r.completed} bailed=${r.bailed}` +
+            (r.lastError ? ` lastError=${r.lastError}` : "");
+
+        el.textContent = "sim debug\n" + header + "\n" + (lines.join("\n") || "(no simulations)");
+    };
+
+    ns.startSimDebug = function () {
+        if (!ns.DEBUG_SIM || ns.simDebugTimer) {
+            return;
+        }
+        console.log("ForceGraph: ?debugSim=1 present, drawing simulation counters");
+        ns.simDebugTimer = window.setInterval(ns.renderSimDebug, 250);
+    };
+
     /**
      * Does this node carry an authored layout position?
      *
@@ -170,6 +273,8 @@ window.Widgets.Panel.ForceGraph = {}
      */
     ns.showGraph = function (split) {
         console.group(`Widgets.Panel.ForceGraph.showGraph on ${window.location}`);
+        ns.showGraphRuns.calls += 1;
+        let completed = false;
 
         try {
             const data = split || panelUtilsNs.split;
@@ -197,14 +302,30 @@ window.Widgets.Panel.ForceGraph = {}
             ns.drawPanel("Promo", window.Widgets.Panel.Promo);
             ns.drawPanel("Scratch", window.Widgets.Panel.Scratch);
 
+            // Instrument before settling so settle()'s own stop() is counted, and so any later
+            // restart() - from a drag, a redraw, or something unaccounted for - is attributable.
+            ns.instrumentSim("Promo", (window.Widgets.Panel.Promo || {}).promotable_sim);
+            ns.instrumentSim("Scratch", (window.Widgets.Panel.Scratch || {}).scratch_sim);
+            ns.startSimDebug();
+
             // Settle both layouts synchronously - see settle() for why waiting on the animation
             // timer is not enough.
             ns.settle("Promo", window.Widgets.Panel.Promo, "promotable_sim");
             ns.settle("Scratch", window.Widgets.Panel.Scratch, "scratch_sim");
+            completed = true;
 
         } catch (error) {
+            ns.showGraphRuns.lastError = String(error && error.message || error).slice(0, 90);
             console.error("ForceGraph.showGraph failed", error);
         } finally {
+            if (completed) {
+                ns.showGraphRuns.completed += 1;
+            } else {
+                // A run that does not reach settle() leaves the simulation it just restarted
+                // running with no one to stop it - see docs/issues/0016.
+                ns.showGraphRuns.bailed += 1;
+                console.warn(`ForceGraph.showGraph did not complete (${ns.showGraphRuns.bailed} so far) - a simulation may be left running`);
+            }
             console.groupEnd();
         }
     };
@@ -238,9 +359,19 @@ window.Widgets.Panel.ForceGraph = {}
             return;
         }
 
+        const stats = ns.simStats[name];
+        const alphaBefore = sim.alpha();
+        const decay = typeof sim.alphaDecay === "function" ? sim.alphaDecay() : null;
+
         try {
             for (let i = 0; i < ns.SETTLE_TICKS; i++) {
                 sim.tick();
+            }
+
+            if (stats) {
+                stats.settleFrom = +alphaBefore.toFixed(4);
+                stats.settleTo = +sim.alpha().toFixed(4);
+                stats.alphaDecay = decay;
             }
 
             // simulation.tick() advances the layout but deliberately does NOT dispatch the "tick"

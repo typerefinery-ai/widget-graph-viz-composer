@@ -145,16 +145,16 @@ window.Widgets.Widget = {};
         console.group(`Widget.loadData on ${window.location}`);
         console.log(data);
 
-        //TODO: clear existing data and visuals in tree
+        // processGraphData renders BOTH force panels via ForceGraph.showGraph(), which draws
+        // them, settles each simulation and stops it.
+        //
+        // It used to be followed here by simGraph()/showGraph() on each panel. Those became a
+        // second, unmanaged render once ForceGraph.showGraph existed: each simGraph() threw away
+        // the settled simulation and built a fresh one, and each showGraph() ends with
+        // alpha(1).restart() - with nothing left to settle or stop it. The result was a live
+        // simulation at alpha 1 ticking on a throttled timer, so the Promotable graph kept
+        // re-laying itself out for minutes and no node could be clicked. See docs/issues/0016.
         panelUtilsNs.processGraphData(data);
-
-        //TODO: clear existing data and visuals in promo
-        panelPromoNs.simGraph()
-        panelPromoNs.showGraph();
-
-        //TODO: clear existing data and visuals in sim
-        panelScratchNs.simGraph();
-        panelScratchNs.showGraph();
 
         //TODO: load options data into panel utils from Composer-Options API
         ns.options = window.Widgets.Panel.Utils.options;
