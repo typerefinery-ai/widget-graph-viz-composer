@@ -263,6 +263,38 @@ window.Widgets.Events = window.Widgets.Events || {};
         }
     };
 
+    /**
+     * Which panel an already-selected element belongs to.
+     *
+     * @param {object} item entry from ns.selection.list
+     * @returns {string} "promo", "scratch", or "unknown"
+     */
+    ns.panelOfSelection = function(item) {
+        const node = item && item.element && item.element.node && item.element.node();
+        if (!node || !node.closest) {
+            return "unknown";
+        }
+        if (node.closest("#promo_panel")) {
+            return "promo";
+        }
+        if (node.closest("#scratch_panel")) {
+            return "scratch";
+        }
+        return "unknown";
+    };
+
+    /** Log the current source/target selection and the panel each came from. */
+    ns.logSelectionPair = function() {
+        const list = ns.selection.list || [];
+        const describe = list.map(function(item) {
+            return `${ns.panelOfSelection(item)}:${item && item.id}`;
+        });
+        console.log(
+            `selection ${ns.selection.count()}/${ns.selection.max} -> [${describe.join(", ")}]` +
+            (ns.selection.count() === 2 ? " (pair ready for Create SRO / Create Connection)" : "")
+        );
+    };
+
     ns.leftclick = function(event, d) {
         console.group(`Widgets.Panel.Utils.leftclick on ${window.location}`);
         console.log("leftclick event->", event);
@@ -339,6 +371,12 @@ window.Widgets.Events = window.Widgets.Events || {};
                 lastElement.classed("select-target", true);
                 lastElement.classed("select-other", false);
             }
+
+            // Report the selection as source/target and which panel each came from. "Create SRO"
+            // and "Create Connection" are meant to work across the Promo and Scratch panels, and
+            // when they do not it is otherwise impossible to see whether the pair was formed at
+            // all, or formed from the wrong panels.
+            ns.logSelectionPair();
 
         } catch (error) {
             console.error("Error in leftclick", error);
