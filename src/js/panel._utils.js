@@ -299,6 +299,16 @@ window.Widgets.Events = window.Widgets.Events || {};
     // A selected object arrives as flat STIX JSON, but the form expects it split into four
     // dicts by how each property behaves in the form. Sending the flat object leaves most
     // fields blank - only the handful whose names happen to line up get populated.
+    // ⚠ DATA-MODEL DEVIATION - see alpha-launch docs/data-agnostic-principle.md
+    //
+    // These lists are STIX2 vocabulary. The platform is data-agnostic and the data model belongs to
+    // the API, so a front end should not be the place that decides which STIX property is "base
+    // required". They live here only as a LAST-RESORT FALLBACK for standalone/local mode.
+    //
+    // resolveFormCategories() below prefers a classification supplied by the data or the host, so
+    // the API or the CMS can take ownership without another change here. Delete these defaults once
+    // one of them does.
+    ns.FORM_CATEGORIES_FALLBACK_SOURCE = "widget built-in (STIX2 default)";
     ns.FORM_BASE_REQUIRED = ["id", "type", "spec_version", "created", "modified"];
     ns.FORM_BASE_OPTIONAL = [
         "created_by_ref", "revoked", "labels", "confidence", "lang",
@@ -315,6 +325,42 @@ window.Widgets.Events = window.Widgets.Events || {};
      * @param {object} dataObject flat STIX object, as held on the graph node
      * @returns {{base_required: object, base_optional: object, object: object, extensions: object}}
      */
+    /**
+     * Resolve the property classification to use, preferring whoever owns the data model.
+     *
+     * Order of preference, so ownership can move without changing this widget:
+     *   1. supplied **with the object** (`dataObject.form_categories`) - the API owns the schema and
+     *      is the right place for this;
+     *   2. supplied by the **host page** (`ns.options.formCategories`) - authored configuration;
+     *   3. the widget's built-in STIX2 defaults - a fallback for standalone/local mode only.
+     *
+     * @param {object} dataObject the object being categorised
+     * @returns {{baseRequired: string[], baseOptional: string[], timestampExceptions: string[], exceptionTypes: string[], source: string}}
+     */
+    ns.resolveFormCategories = function(dataObject) {
+        const fromData = dataObject && dataObject.form_categories;
+        const fromHost = ns.options && ns.options.formCategories;
+        const supplied = fromData || fromHost;
+
+        if (supplied && supplied.base_required) {
+            return {
+                baseRequired: supplied.base_required || [],
+                baseOptional: supplied.base_optional || [],
+                timestampExceptions: supplied.timestamp_exceptions || [],
+                exceptionTypes: supplied.exception_types || [],
+                source: fromData ? "data payload" : "host options"
+            };
+        }
+
+        return {
+            baseRequired: ns.FORM_BASE_REQUIRED,
+            baseOptional: ns.FORM_BASE_OPTIONAL,
+            timestampExceptions: ns.FORM_TIMESTAMP_EXCEPTIONS,
+            exceptionTypes: ns.FORM_EXCEPTION_TYPES,
+            source: ns.FORM_CATEGORIES_FALLBACK_SOURCE
+        };
+    };
+
     ns.categoriseFormData = function(dataObject) {
         const categorised = {
             base_required: {},
@@ -329,16 +375,22 @@ window.Widgets.Events = window.Widgets.Events || {};
         }
 
         const objectType = dataObject.type;
-        const isExceptionType = ns.FORM_EXCEPTION_TYPES.indexOf(objectType) > -1;
+        const categories = ns.resolveFormCategories(dataObject);
+        const isExceptionType = categories.exceptionTypes.indexOf(objectType) > -1;
 
         Object.keys(dataObject).forEach(function(propertyName) {
             const propertyValue = dataObject[propertyName];
 
-            if (isExceptionType && ns.FORM_TIMESTAMP_EXCEPTIONS.indexOf(propertyName) > -1) {
+            if (propertyName === "form_categories") {
+                // control field, not a form property - it told us how to classify the rest
+                return;
+            }
+
+            if (isExceptionType && categories.timestampExceptions.indexOf(propertyName) > -1) {
                 categorised.object[propertyName] = propertyValue;
-            } else if (ns.FORM_BASE_REQUIRED.indexOf(propertyName) > -1) {
+            } else if (categories.baseRequired.indexOf(propertyName) > -1) {
                 categorised.base_required[propertyName] = propertyValue;
-            } else if (ns.FORM_BASE_OPTIONAL.indexOf(propertyName) > -1) {
+            } else if (categories.baseOptional.indexOf(propertyName) > -1) {
                 categorised.base_optional[propertyName] = propertyValue;
             } else if (propertyName === "extensions") {
                 categorised.extensions = propertyValue;
@@ -353,7 +405,8 @@ window.Widgets.Events = window.Widgets.Events || {};
             `base_optional(${Object.keys(categorised.base_optional).length}) ` +
             `object(${Object.keys(categorised.object).length}) ` +
             `extensions(${Object.keys(categorised.extensions || {}).length})` +
-            (isExceptionType ? " [created/modified treated as object properties]" : "")
+            (isExceptionType ? " [created/modified treated as object properties]" : "") +
+            ` [classification from: ${categories.source}]`
         );
 
         return categorised;
