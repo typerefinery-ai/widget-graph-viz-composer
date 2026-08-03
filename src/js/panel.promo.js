@@ -83,6 +83,48 @@ window.Widgets.Panel.Promo = {}
         const eventData = eventsNs.compileEventData(payload, eventName, "BUTTON_CLICK", componentId, {});
 
         panelUtilsNs.showNotification("loading", "Removing object...");
+
+        // Supervise the round trip the same way the tree menu actions do: without this the object
+        // is removed on the server but stays on screen until a reload, because nothing re-fetches
+        // (alpha-launch docs/issues/0032). The source doc says it plainly for every one of these
+        // RMB actions: "Refresh must be run afterwards".
+        const actionTimeoutMs = 15000;
+        let timeoutId = window.setTimeout(() => {
+            panelUtilsNs.showNotification("error", "Remove failed: parent response timed out");
+        }, actionTimeoutMs);
+
+        const responseHandler = function(id, response) {
+            window.clearTimeout(timeoutId);
+            if (typeof panelUtilsNs.dismissAllNotifications === "function") {
+                panelUtilsNs.dismissAllNotifications();
+            }
+
+            // Same two reply shapes the tree actions accept: an explicit payload.status, or the
+            // host embed's {ok, data} contract merged into the original event.
+            const payloadResponse = response && response.payload;
+            let status = typeof (payloadResponse && payloadResponse.status) === "string" ? payloadResponse.status : "unknown";
+            if (status === "unknown" && typeof (response && response.ok) === "boolean") {
+                status = response.ok ? "success" : "error";
+            }
+            console.log("remove object response", { status: status, ok: response && response.ok, data: response && response.data });
+
+            if (status === "success") {
+                panelUtilsNs.showNotification("success", "Object removed");
+                // Re-fetch so Promo and Scratch reflect the removal.
+                if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
+                    window.Widgets.Widget.requestData();
+                } else {
+                    console.warn("actionRemoveObject: no requestData() to refresh with");
+                }
+            } else {
+                const detail = (payloadResponse && payloadResponse.message) || "Failed to remove object";
+                panelUtilsNs.showNotification("error", detail);
+            }
+        };
+
+        // Register before raising, to avoid racing the reply.
+        eventsNs.registerEvent(eventName, eventsNs.eventListenerHandler, responseHandler);
+
         console.log(`raising ${eventName} for ${nodeData.id}`, eventData);
         eventsNs.raiseEvent(eventName, eventData);
         console.groupEnd();
