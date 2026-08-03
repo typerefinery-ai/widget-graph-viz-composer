@@ -62,32 +62,9 @@ window.Widgets.Panel.Scratch = {}
         {
             label: "Remove",
             icon: '<i class="fa-solid fa-broom"></i>',
-            action: () => {
-                const contextData = panelUtilsNs.getContentMenuData();
-                console.log("raising event to open remove object", contextData);
-
-                console.log("panelUtilsNs.selection", panelUtilsNs.selection);
-
-                const formId = "remove-promo-sro";
-                const eventName = "viz-open-form-" + formId;
-                const config = formId;
-                const action = "BUTTON_CLICK";
-                const formData = {
-                    formId: formId,
-                    eventName: eventName,
-                    action: action,
-                    config: config,
-                    data: contextData.data,
-                };
-                console.log("compileEventData", formData, eventName, action, formId, config);
-            
-                const data = eventsNs.compileEventData(formData, eventName, action, formId, config);
-            
-                console.log(`event raise ${eventName}`, data);
-                eventsNs.raiseEvent(eventName, data);
-                console.log(`event raised ${eventName}`);
-                console.groupEnd();
-            },
+            // Same path as Promo — one implementation, so the two panes cannot drift again the way
+            // Create SRO / Create Connection did (alpha-launch docs/issues/0015).
+            action: () => window.Widgets.Panel.Promo.actionRemoveObject(),
         },
     ];
 

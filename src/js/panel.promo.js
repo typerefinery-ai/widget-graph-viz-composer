@@ -41,6 +41,53 @@ window.Widgets.Panel.Promo = {}
      * selection array, so its modal opened with no source, target or relationship type.
      * See alpha-launch docs/issues/0015.
      */
+    /**
+     * Remove the right-clicked object from unattached context.
+     *
+     * This used to raise `viz-open-form-remove-promo-sro` with action `OPEN_FORM_MODAL`, expecting
+     * the host to open a confirm form that was never built — and it carried the author's open
+     * question, *"What are we sending to the form from current selection?"*. Nothing on the host
+     * listened, so the menu item was a silent no-op (alpha-launch docs/issues/0032).
+     *
+     * It now follows the **tree Copy** pattern, which is the only working precedent for an RMB
+     * action that calls an API: raise the event under the API's own topic with componentAction
+     * `BUTTON_CLICK`, and put the request body in `payload.data` — the host embed POSTs that
+     * verbatim to the URL configured on the matching authored mapping.
+     *
+     * The body is the **raw node wrapper** (the object carrying `id` and `original`). Verified
+     * against the live endpoint: `{force_object: …}` and `{tree_object: …}` both produce algorithm
+     * error envelopes; the bare node works. Note that differs from copy-to-unattached, which wants
+     * `{tree_object: …}` — the two sibling APIs genuinely disagree (docs/issues/0037).
+     */
+    ns.actionRemoveObject = () => {
+        console.groupCollapsed("actionRemoveObject");
+        const contextData = panelUtilsNs.getContentMenuData();
+        console.log("context data for remove", contextData);
+
+        const nodeData = contextData && contextData.data;
+        if (!nodeData || !nodeData.id) {
+            console.warn("actionRemoveObject: no object under the cursor, nothing to remove");
+            panelUtilsNs.showNotification("error", "Remove failed: no object selected");
+            console.groupEnd();
+            return;
+        }
+
+        const eventName = "embed-force-remove";
+        const componentId = `${eventName}::promo-panel`;
+        const payload = {
+            action: eventName,
+            id: componentId,
+            type: "force_action",
+            data: nodeData,
+        };
+        const eventData = eventsNs.compileEventData(payload, eventName, "BUTTON_CLICK", componentId, {});
+
+        panelUtilsNs.showNotification("loading", "Removing object...");
+        console.log(`raising ${eventName} for ${nodeData.id}`, eventData);
+        eventsNs.raiseEvent(eventName, eventData);
+        console.groupEnd();
+    };
+
     ns.actionCreateSRO = () => {
                 const contextData = panelUtilsNs.getContentMenuData();
                 console.log("raising event to open create Force SRO form", contextData);
@@ -320,35 +367,7 @@ window.Widgets.Panel.Promo = {}
         {
             label: "Remove",
             icon: '<i class="fa-solid fa-broom"></i>',
-            action: () => {
-                const contextData = panelUtilsNs.getContentMenuData();
-                console.log("raising event to open remove object", contextData);
-
-                console.log("panelUtilsNs.selection", panelUtilsNs.selection);
-
-                //TODO: What are we sending to the form from current selection?
-                let dataForForm = contextData.data;
-
-                const formId = "remove-promo-sro";
-                const eventName = "viz-open-form-" + formId;
-                const config = formId;
-                const action = "OPEN_FORM_MODAL";
-                const formData = {
-                    formId: formId,
-                    eventName: eventName,
-                    action: action,
-                    config: config,
-                    data: dataForForm,
-                };
-                console.log("compileEventData", formData, eventName, action, formId, config);
-            
-                const data = eventsNs.compileEventData(formData, eventName, action, formId, config);
-            
-                console.log(`event raise ${eventName}`, data);
-                eventsNs.raiseEvent(eventName, data);
-                console.log(`event raised ${eventName}`);
-                console.groupEnd();
-            },
+            action: () => ns.actionRemoveObject(),
         },
     ];
 
