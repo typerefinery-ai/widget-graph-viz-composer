@@ -395,11 +395,91 @@ window.Widgets.Panel.Promo = {}
                 }
             };
 
+    /**
+     * Promote the object under the cursor — and everything attached to it — into the incident.
+     *
+     * **Only the Promotable pane offers this** (alpha-launch decisions/0010, runsheet P3-S9): it is
+     * deliberately absent from `panel.scratch.js`. GitHub #78 decides promotable-ness by TYPE, and
+     * Promo/Scratch are both *inside* unattached, so Promote crosses a different boundary —
+     * unattached into the incident.
+     *
+     * The API half moves a **sub-graph**, not one object, which is #84's wording: the route walks
+     * `references` transitively from this node.
+     *
+     * Follows `actionRemoveObject` below, including its round-trip supervision and the refresh
+     * afterwards — without which the object is moved on the server and stays on screen
+     * (docs/issues/0032).
+     */
+    ns.actionPromote = () => {
+        console.groupCollapsed("actionPromote");
+        const contextData = panelUtilsNs.getContentMenuData();
+        const nodeData = contextData && contextData.data;
+        if (!nodeData || !nodeData.id) {
+            console.warn("actionPromote: no object under the cursor, nothing to promote");
+            panelUtilsNs.showNotification("error", "Promote failed: no object selected");
+            console.groupEnd();
+            return;
+        }
+
+        const eventName = "embed-force-promote";
+        const componentId = `${eventName}::promo-panel`;
+        const payload = {
+            action: eventName,
+            id: componentId,
+            type: "force_action",
+            data: nodeData,
+        };
+        const eventData = eventsNs.compileEventData(payload, eventName, "BUTTON_CLICK", componentId, {});
+
+        panelUtilsNs.showNotification("loading", "Promoting sub-graph into the incident...");
+
+        const actionTimeoutMs = 20000;
+        let timeoutId = window.setTimeout(() => {
+            panelUtilsNs.showNotification("error", "Promote failed: parent response timed out");
+        }, actionTimeoutMs);
+
+        const responseHandler = function(id, response) {
+            window.clearTimeout(timeoutId);
+            if (typeof panelUtilsNs.dismissAllNotifications === "function") {
+                panelUtilsNs.dismissAllNotifications();
+            }
+            const payloadResponse = response && response.payload;
+            let status = typeof (payloadResponse && payloadResponse.status) === "string" ? payloadResponse.status : "unknown";
+            if (status === "unknown" && typeof (response && response.ok) === "boolean") {
+                status = response.ok ? "success" : "error";
+            }
+            console.log("promote response", { status: status, ok: response && response.ok });
+
+            if (status === "success") {
+                panelUtilsNs.showNotification("success", "Promoted into the incident");
+                // Both panes change: the sub-graph leaves unattached entirely.
+                if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
+                    window.Widgets.Widget.requestData();
+                } else {
+                    console.warn("actionPromote: no requestData() to refresh with");
+                }
+            } else {
+                const detail = (payloadResponse && payloadResponse.message) || "Failed to promote";
+                panelUtilsNs.showNotification("error", detail);
+            }
+        };
+
+        eventsNs.registerEvent(eventName, eventsNs.eventListenerHandler, responseHandler);
+        console.log(`raising ${eventName} for ${nodeData.id}`, eventData);
+        eventsNs.raiseEvent(eventName, eventData);
+        console.groupEnd();
+    };
+
     ns.menuItems = [
         {
             label: "Create SRO",
             icon: '<i class="fa-regular fa-handshake"></i>',
             action: () => ns.actionCreateSRO(),
+        },
+        {
+            label: "Promote",
+            icon: '<i class="fa-solid fa-arrow-up-from-bracket"></i>',
+            action: () => ns.actionPromote(),
         },
         {
             label: "Create Connection",
