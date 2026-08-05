@@ -290,24 +290,25 @@ window.Widgets.Events = window.Widgets.Events || {};
     };
 
     /**
-     * Keep a panel's SVG the size of its container.
+     * Re-sync a panel's SVG whenever its container changes size.
      *
-     * **Why (alpha-launch docs/issues/0058).** Each panel sizes its SVG once, from
-     * `$component.width()/height()` at build time, and nothing re-measures. When the host's layout
-     * settles later the SVG keeps its stale size — and a pane that is *too big* covers its
-     * neighbour. Measured: a full regression failed P3-S6 with the Promo node visible, enabled and
-     * stable while `<svg class="scratch_svg" width="569" height="360">` **intercepted the click**.
+     * **The sizing itself is NOT reimplemented here.** `ForceGraph.syncSvgToPanel` already does it,
+     * and its author wrote why: *"Syncing here keeps the fix in one place rather than reworking each
+     * panel's init."* This adds only the missing **trigger**.
      *
-     * This is the same fault as [0056] in `widget-graph-viz-overview`, where the Overview widget
-     * drew into the iframe's pre-layout size and produced 7px icons on about one load in three. The
-     * fix that worked there is the fix here: observe the container and re-apply the size.
+     * **The gap (alpha-launch docs/issues/0058).** `syncSvgToPanel` is called from `showGraph`, so a
+     * pane is corrected *when a graph is drawn*. Nothing re-syncs when the container changes size
+     * **after** that — and the host's layout does settle later. A stale, oversized SVG then covers
+     * its neighbour: a full regression failed P3-S6 with the Promo node visible, enabled and stable
+     * while `<svg class="scratch_svg" width="569" height="360">` **intercepted the click**.
      *
-     * @param {object}   $component jQuery panel container
-     * @param {function} svgOf      returns the d3 selection to resize (called lazily — the SVG may
-     *                              be rebuilt between resizes)
-     * @param {function} [onResize] optional, run after the size is applied (re-fit, re-centre…)
+     * Same underlying fault as [0056] in `widget-graph-viz-overview`, where the Overview widget drew
+     * into the iframe's pre-layout size and produced 7px icons on about one load in three.
+     *
+     * @param {object} $component   jQuery panel container
+     * @param {string} panelSelector selector `syncSvgToPanel` uses, e.g. `#promo_panel`
      */
-    ns.observePanelResize = function($component, svgOf, onResize) {
+    ns.observePanelResize = function($component, panelSelector) {
         const element = $component && $component.get && $component.get(0);
         if (!element || typeof ResizeObserver === "undefined") {
             return;
@@ -322,21 +323,21 @@ window.Widgets.Events = window.Widgets.Events || {};
             const width = $component.width();
             const height = $component.height();
             const key = width + "x" + height;
-            // Only act on a real change — re-laying out on every observer tick would fight the
+            // Only act on a real change — re-syncing on every observer tick would fight the
             // simulation rather than help it.
             if (key === last || !width || !height) {
                 return;
             }
             last = key;
-            const svg = typeof svgOf === "function" ? svgOf() : svgOf;
-            if (!svg || (svg.empty && svg.empty())) {
+            // Resolved at call time, not when this file loads: the build concatenates
+            // src/js/**/*.js alphabetically, so panel.forcegraph.js is still undefined here.
+            const forceGraphNs = window.Widgets && window.Widgets.Panel && window.Widgets.Panel.ForceGraph;
+            if (!forceGraphNs || typeof forceGraphNs.syncSvgToPanel !== "function") {
+                console.warn("observePanelResize: ForceGraph.syncSvgToPanel unavailable, cannot re-sync " + panelSelector);
                 return;
             }
-            console.log("observePanelResize: " + ($component.attr("id") || "panel") + " is now " + key + ", resizing its svg");
-            svg.attr("width", width).attr("height", height);
-            if (typeof onResize === "function") {
-                onResize(width, height);
-            }
+            console.log("observePanelResize: " + panelSelector + " is now " + key + ", re-syncing its svg");
+            forceGraphNs.syncSvgToPanel(panelSelector);
         });
         observer.observe(element);
     };
