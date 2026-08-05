@@ -289,6 +289,58 @@ window.Widgets.Events = window.Widgets.Events || {};
         return "unknown";
     };
 
+    /**
+     * Keep a panel's SVG the size of its container.
+     *
+     * **Why (alpha-launch docs/issues/0058).** Each panel sizes its SVG once, from
+     * `$component.width()/height()` at build time, and nothing re-measures. When the host's layout
+     * settles later the SVG keeps its stale size — and a pane that is *too big* covers its
+     * neighbour. Measured: a full regression failed P3-S6 with the Promo node visible, enabled and
+     * stable while `<svg class="scratch_svg" width="569" height="360">` **intercepted the click**.
+     *
+     * This is the same fault as [0056] in `widget-graph-viz-overview`, where the Overview widget
+     * drew into the iframe's pre-layout size and produced 7px icons on about one load in three. The
+     * fix that worked there is the fix here: observe the container and re-apply the size.
+     *
+     * @param {object}   $component jQuery panel container
+     * @param {function} svgOf      returns the d3 selection to resize (called lazily — the SVG may
+     *                              be rebuilt between resizes)
+     * @param {function} [onResize] optional, run after the size is applied (re-fit, re-centre…)
+     */
+    ns.observePanelResize = function($component, svgOf, onResize) {
+        const element = $component && $component.get && $component.get(0);
+        if (!element || typeof ResizeObserver === "undefined") {
+            return;
+        }
+        if ($component.data("panel-resize-observed")) {
+            return;
+        }
+        $component.data("panel-resize-observed", true);
+
+        let last = null;
+        const observer = new ResizeObserver(function() {
+            const width = $component.width();
+            const height = $component.height();
+            const key = width + "x" + height;
+            // Only act on a real change — re-laying out on every observer tick would fight the
+            // simulation rather than help it.
+            if (key === last || !width || !height) {
+                return;
+            }
+            last = key;
+            const svg = typeof svgOf === "function" ? svgOf() : svgOf;
+            if (!svg || (svg.empty && svg.empty())) {
+                return;
+            }
+            console.log("observePanelResize: " + ($component.attr("id") || "panel") + " is now " + key + ", resizing its svg");
+            svg.attr("width", width).attr("height", height);
+            if (typeof onResize === "function") {
+                onResize(width, height);
+            }
+        });
+        observer.observe(element);
+    };
+
     /** Log the current source/target selection and the panel each came from. */
     ns.logSelectionPair = function() {
         const list = ns.selection.list || [];

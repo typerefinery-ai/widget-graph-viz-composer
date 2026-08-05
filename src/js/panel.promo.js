@@ -994,6 +994,11 @@ window.Widgets.Panel.Promo = {}
                 .text('Promotable')
                 .style('fill', panelUtilsNs.theme.svgName);
 
+            // Keep the SVG the size of its pane. Built once from a container that may not have
+            // been laid out yet, an oversized SVG covers the neighbouring pane and swallows its
+            // clicks (alpha-launch docs/issues/0058).
+            panelUtilsNs.observePanelResize($component, function() { return ns.promo_svg; });
+
             ns.promo_svg_zoom = ns.promo_svg
                 .call(
                     d3.zoom().on('zoom', function(event, d) {

@@ -436,6 +436,10 @@ window.Widgets.Panel.Scratch = {}
                 .text('Scratch Pad')
                 .style('fill', panelUtilsNs.theme.svgName);
 
+            // Keep the SVG the size of its pane. This is the pane that was measured covering its
+            // neighbour and intercepting Promo's clicks (alpha-launch docs/issues/0058).
+            panelUtilsNs.observePanelResize($component, function() { return ns.scratch_svg; });
+
             ns.scratch_svg_zoom = ns.scratch_svg
                 .call(
                     d3.zoom().on('zoom', function(event, d) {

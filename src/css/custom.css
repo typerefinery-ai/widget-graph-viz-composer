@@ -53,6 +53,8 @@ stroke: #00557d;
     border: 1px solid #000;
     height: 100%;
     /* background-color: rgb(23, 118, 201); */
+    /* alpha-launch docs/issues/0058 — see #scratch_panel below. */
+    overflow: hidden;
 }
 #scratch_panel {
     /* overflow: scroll; */
@@ -60,6 +62,20 @@ stroke: #00557d;
     margin: 0px;
     border: 1px solid #000;
     height: 100%;
+    /*
+     * alpha-launch docs/issues/0058: an SVG sized before the layout settled grew past its pane and
+     * covered the neighbouring one, so clicks meant for a Promo node were intercepted by
+     * `svg.scratch_svg`. `observePanelResize` fixes the *size*; this clips whatever is still
+     * oversized, so a sizing fault can never again reach across panes and eat input.
+     */
+    overflow: hidden;
+}
+
+/* Belt and braces for the same fault: neither pane's drawing surface may exceed its container. */
+#promo_panel > svg,
+#scratch_panel > svg {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 #tree_panel {
