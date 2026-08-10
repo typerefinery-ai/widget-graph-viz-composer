@@ -14,6 +14,90 @@ window.Widgets.Widget = {};
 
     //keep track of all listeners and callbacks.
     ns.listeners = new Map();
+
+    /**
+     * Fetch the Composer options (GitHub #82) and merge them over the built-in defaults.
+     *
+     * The API half of #82 has been live since 2026-08-05 — `/viz-data/composer-options` returns
+     * **35 real keys** — and nothing consumed it (task 3/11 in the runsheet rollup, the last ⬜
+     * outside Act 4). The *Overview* widget already does this; this is the same wiring in the
+     * Composer, deliberately written the same way so the two stay comparable.
+     *
+     * The contract lines up key-for-key with `panelUtilsNs.options`: `tree_data`,
+     * `tree_data_default`, `duration`, `radius`, `barHeight`, `width`, `height`, `svg_spacing`,
+     * `svg_height`, `textPadding`, `corner`, `minHeight`, `lineSpacing`, `indentSpacing`,
+     * `itemFont`, `boxSize`, `tree_edge_thickness`, `graph_edge_thickness`, `linkStrength`,
+     * `nodeStrength`, `centreStrength`, `promoSim`, `scratchSim`, `api`, `prefix`, `shape`,
+     * `tooltipContent`, `current_theme`, `icon_size`, `layout`, `margin`, `edgeFontFamily`,
+     * `edgeFontSize`, `notifications`, `theme` — so this is a **merge, not a mapping**.
+     *
+     * ⚠️ **A 200 is not success here.** These flow algorithms answer 200 with an `{"error":"true"}`
+     * envelope when they throw (alpha-launch docs/issues/0026) — which is exactly how the overview
+     * half of #82 looked healthy while broken for a day. Reject that body rather than merging it
+     * over good defaults.
+     *
+     * ⚠️ **Deep merge, never replace.** `options.theme` is captured by reference during init
+     * (`panelUtilsNs.theme = panelUtilsNs.options.theme`), so replacing the object would leave the
+     * widget pointing at the old one. Merging in place updates what everything already holds.
+     */
+    ns.optionsUrl = '/viz-data/composer-options';
+
+    ns.mergeOptions = function(target, source) {
+        Object.keys(source || {}).forEach((key) => {
+            const value = source[key];
+            const isPlainObject = value && typeof value === "object" && !Array.isArray(value);
+            if (isPlainObject && target[key] && typeof target[key] === "object" && !Array.isArray(target[key])) {
+                ns.mergeOptions(target[key], value);
+            } else {
+                target[key] = value;
+            }
+        });
+        return target;
+    }
+
+    /**
+     * Where to reach the flow API from wherever this widget is running.
+     *
+     * ⚠️ `http://localhost:8111` only works in the **standalone** workbench. Embedded, the widget
+     * is served from `https://widgetdevcomposer.typerefinery.localhost:8101`, and the direct port
+     * answers with **no `Access-Control-Allow-Origin`**, so the fetch is blocked by CORS. The
+     * Traefik host proxies the same route and does send `Access-Control-Allow-Origin: *` — the
+     * same conclusion alpha-launch decision 0006 reached for the incidents table's cold-start URL,
+     * and what made the Overview's own options fetch work embedded.
+     */
+    ns.apiBase = function() {
+        return window.location.protocol === "https:"
+            ? "https://flow.typerefinery.localhost:8101"
+            : "http://localhost:8111";
+    }
+
+    ns.loadOptions = function() {
+        const url = ns.apiBase() + ns.optionsUrl;
+        console.log("loadOptions: fetching Composer options from " + url);
+        ns.optionsReady = fetch(url)
+            .then((response) => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then((options) => {
+                if (!options || typeof options !== "object" || options.error) {
+                    // docs/issues/0026: a 200 carrying an error body. Keep the defaults.
+                    console.warn("loadOptions: options endpoint returned an error body, keeping defaults", options);
+                    return false;
+                }
+                const applied = Object.keys(options);
+                ns.mergeOptions(panelUtilsNs.options, options);
+                console.log(`loadOptions: merged ${applied.length} option(s) over the defaults: ${applied.join(', ')}`);
+                console.log(`loadOptions: current_theme=${panelUtilsNs.options.current_theme}, icon_size=${panelUtilsNs.options.icon_size}`);
+                return true;
+            })
+            .catch((error) => {
+                // Never let options break the widget — the defaults are a working configuration.
+                console.warn("loadOptions: could not load Composer options, keeping defaults: " + error.message);
+                return false;
+            });
+        return ns.optionsReady;
+    }
         
     ns.raiseEventDataRequest = function(eventName, topics = [], eventAction, id, callbackFn) {      
         console.group(`raiseEventDataRequest on ${window.location}`); 
@@ -225,7 +309,25 @@ window.Widgets.Widget = {};
             return;
         }
         $component.data("widget-initialized", true);
-        
+
+        /**
+         * Wait for the #82 options merge before building anything.
+         *
+         * The Overview widget only needs its options by *draw* time, so it fires the fetch and
+         * lets `loadFromData` wait on the promise. The Composer cannot do that: the body below
+         * captures the theme by reference (`panelUtilsNs.theme = panelUtilsNs.options.theme`) and
+         * immediately builds the tooltip out of `theme.tooltip.*`, so a merge that lands later
+         * would leave the tooltip on the defaults while everything else moved.
+         *
+         * `loadOptions` never rejects — a failed fetch keeps the defaults — so init always runs.
+         */
+        ns.loadOptions().then((merged) => {
+            console.log(`widget.init: proceeding with ${merged ? 'API' : 'default'} options`);
+            ns.initWithOptions($component);
+        });
+    };
+
+    ns.initWithOptions = function($component) {
         console.group(`widget.init on ${window.location}`);
         try {
             console.log(d3, componentsNs, eventsNs);
