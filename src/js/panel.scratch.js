@@ -249,6 +249,17 @@ window.Widgets.Panel.Scratch = {}
             .on('tick', function() {
             // console.log("tick event",  ns.scratch_svg_root.selectAll('.slinks'));
 
+                // Same containment as the Promotable panel — keep nodes inside their panel before
+                // anything reads their coordinates (alpha-launch docs/issues/0065). Scratch holds
+                // fewer nodes so it overflows less often, but the panel is smaller too.
+                // `this.nodes()` for the same reason as the Promotable panel — the namespace's split
+                // is reassigned on refresh, the simulation's array is not.
+                window.Widgets.Panel.ForceGraph.clampNodesToPanel(
+                    this.nodes(),
+                    '#scratch_panel',
+                    ns.options.iconSize
+                );
+
                 ns.scratch_svg_root
                     .selectAll('.slinks')
                     .attr('x1', function(d) { 

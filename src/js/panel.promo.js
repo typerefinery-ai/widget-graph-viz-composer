@@ -885,6 +885,23 @@ window.Widgets.Panel.Promo = {}
             .on('tick', function() {
                 // console.log(['promotable_sim ticked',this, ns.promo_svg
                 // .selectAll('.plinks')]);
+
+                // Keep nodes inside the panel before anything reads their coordinates, so nodes,
+                // links and edge paths all agree. Without this the charge force spreads ~29 nodes
+                // past the panel edges and some become unreachable without panning
+                // (alpha-launch docs/issues/0065). Resolved at call time because the build
+                // concatenates src/js/**/*.js alphabetically.
+                // ⚠️ `this.nodes()`, not `panelUtilsNs.split.promo.nodes`. showGraph reassigns
+                // `panelUtilsNs.split` on every refresh, while the simulation keeps ticking the array
+                // it was constructed with — so reaching through the namespace can clamp a *different*
+                // array than the one being rendered, and some nodes escape. Measured: nodes still
+                // 5-7px outside with the namespace reference.
+                window.Widgets.Panel.ForceGraph.clampNodesToPanel(
+                    this.nodes(),
+                    '#promo_panel',
+                    ns.options.iconSize
+                );
+
                 ns.promo_svg_root
                     .selectAll('.plinks')
                     .attr('x1', (d) => d.source.x)

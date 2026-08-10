@@ -205,6 +205,9 @@ window.Widgets.Panel.ForceGraph = {}
         const currentHeight = Math.round(svg.getBoundingClientRect().height);
 
         if (currentWidth === width && currentHeight === height) {
+            // Cache here too: this is the common path once the panel has settled, and the clamp
+            // would otherwise never see a refreshed size.
+            ns.panelBounds[panelSelector] = { width: width, height: height };
             return { width: width, height: height };
         }
 
@@ -215,7 +218,96 @@ window.Widgets.Panel.ForceGraph = {}
             `-> ${width}x${height} (panel size)`
         );
 
+        // The per-tick clamp reads these rather than measuring, so refresh them wherever the panel
+        // size is established or changes (docs/issues/0065).
+        ns.panelBounds[panelSelector] = { width: width, height: height };
         return { width: width, height: height };
+    };
+
+    /**
+     * Cached panel bounds, so the per-tick clamp does not force a layout read 60 times a second.
+     *
+     * Refreshed by syncSvgToPanel, which already runs whenever the panel is drawn or resized -
+     * so the cache cannot go stale in the one way that would matter.
+     */
+    ns.panelBounds = {};
+
+    /**
+     * Keep every node inside its panel.
+     *
+     * ⚠️ Nothing used to do this. applyLayout anchors nodes to the panel centre and lets the charge
+     * and collide forces spread them out, and with ~29 Promotable nodes that spread runs past the
+     * panel edges - measured at y = -46.68 (above the panel) and y = 386.6 (below it). A node out
+     * there is invisible until the user thinks to pan, on a panel whose whole job is to show what is
+     * available to work with (alpha-launch docs/issues/0065).
+     *
+     * ⚠️ This is *not* the fault behind docs/issues/0056 and 0058, which were both "the panel measured
+     * its size once and never re-measured". syncSvgToPanel already fixed that, and it runs first here.
+     * This is a separate, simpler gap: no containment at all.
+     *
+     * Clamping `d.x`/`d.y` rather than the rendered attributes keeps nodes, links and edge paths
+     * consistent - they all read from the same coordinates in the tick handler.
+     *
+     * @param {Array<object>} nodes simulation nodes, mutated in place
+     * @param {string} panelSelector selector for the panel element
+     * @param {number} iconSize rendered node size, so a node is clamped by its edge not its centre
+     * @returns {number} how many nodes had to be moved
+     */
+    ns.clampNodesToPanel = function (nodes, panelSelector, iconSize) {
+        if (!nodes || !nodes.length) {
+            return 0;
+        }
+
+        let bounds = ns.panelBounds[panelSelector];
+        if (!bounds) {
+            bounds = ns.syncSvgToPanel(panelSelector);
+            if (!bounds) {
+                return 0;
+            }
+            ns.panelBounds[panelSelector] = bounds;
+        }
+
+        // ⚠️ Clamp against the SVG's **rendered** box, not the panel's. syncSvgToPanel sets the svg's
+        // width/height *attributes* from the panel, but CSS (the `max-width/height: 100%` clipping
+        // added for docs/issues/0058) can render it smaller — measured panel 569x360 against svg
+        // 567x358. Two pixels, but they are two pixels a node can sit in and be unclickable.
+        const svg = document.querySelector(panelSelector + " svg");
+        const svgBox = svg && svg.getBoundingClientRect();
+        if (svgBox && svgBox.width && svgBox.height) {
+            bounds = { width: Math.min(bounds.width, svgBox.width), height: Math.min(bounds.height, svgBox.height) };
+        }
+
+        // Keep the drawn square inside the panel, not the node's centre — and the drawn square is
+        // **`iconSize + 5`**, not `iconSize`. The panes render
+        //     .attr('x', d.x - iconSize / 2).attr('width', iconSize + 5)
+        // so the box runs from `d.x - iconSize/2` to `d.x + iconSize/2 + 5`. A symmetric
+        // `iconSize / 2` margin therefore holds the left and top edges in but lets the right and
+        // bottom edges hang 5px over — measured 2026-08-10 as 3 of 38 Promotable nodes overhanging
+        // while 0 were unclickable, which is exactly that 5px (alpha-launch docs/issues/0065).
+        //
+        // The bounds are asymmetric for the same reason. Clamping is cheap; being 5px wrong in the
+        // direction of "node half off the edge" is the whole point of the function.
+        const size = iconSize || 40;
+        const drawn = size + 5;
+        const minX = size / 2;
+        const minY = size / 2;
+        const maxX = Math.max(minX, bounds.width - (drawn - size / 2));
+        const maxY = Math.max(minY, bounds.height - (drawn - size / 2));
+
+        let moved = 0;
+        nodes.forEach(function (node) {
+            if (typeof node.x !== "number" || typeof node.y !== "number") {
+                return;
+            }
+            const x = Math.max(minX, Math.min(maxX, node.x));
+            const y = Math.max(minY, Math.min(maxY, node.y));
+            if (x !== node.x || y !== node.y) {
+                node.x = x;
+                node.y = y;
+                moved += 1;
+            }
+        });
+        return moved;
     };
 
     /**
