@@ -295,6 +295,7 @@ window.Widgets.Panel.ForceGraph = {}
         const maxY = Math.max(minY, bounds.height - (drawn - size / 2));
 
         let moved = 0;
+        const clampedToEdge = [];
         nodes.forEach(function (node) {
             if (typeof node.x !== "number" || typeof node.y !== "number") {
                 return;
@@ -305,6 +306,50 @@ window.Widgets.Panel.ForceGraph = {}
                 node.x = x;
                 node.y = y;
                 moved += 1;
+            }
+            // Remember which nodes ended up ON a horizontal edge - they are the ones that stack.
+            if (y === minY || y === maxY) {
+                clampedToEdge.push(node);
+            }
+        });
+
+        // ⚠️ alpha-launch docs/issues/0078 - clamping is MANY-TO-ONE: every out-of-range y maps onto
+        // the same minY (or maxY), so the more nodes the simulation pushes out, the more land on the
+        // identical coordinate and cover each other. Measured 2026-08-11: 6 of 58 Promotable nodes
+        // were unclickable, every one at y=1 or y=319 - exactly these two values. The node on top
+        // takes the pointer ("<image id=...> intercepts pointer events") and the one beneath cannot
+        // be selected at all.
+        //
+        // 0065's fix stopped nodes being drawn OUTSIDE the pane; this stops the ones it pulled back
+        // in from landing on top of each other. Containment still wins: nothing here moves a node
+        // out of [minX, maxX], so P3-S1's containment invariant is unaffected.
+        const byEdge = {};
+        clampedToEdge.forEach(function (node) {
+            const key = String(node.y);
+            (byEdge[key] = byEdge[key] || []).push(node);
+        });
+        Object.keys(byEdge).forEach(function (key) {
+            const row = byEdge[key].sort(function (a, b) {
+                return a.x - b.x;
+            });
+            if (row.length < 2) {
+                return;
+            }
+            // Spread left-to-right, then, if the edge runs out of room, pack back from the right.
+            // A pass in one direction alone piles the overflow onto maxX - which is the same defect.
+            for (let i = 1; i < row.length; i++) {
+                const wanted = row[i - 1].x + drawn;
+                if (row[i].x < wanted && wanted <= maxX) {
+                    row[i].x = wanted;
+                    moved += 1;
+                }
+            }
+            for (let i = row.length - 2; i >= 0; i--) {
+                const limit = row[i + 1].x - drawn;
+                if (row[i].x > limit && limit >= minX) {
+                    row[i].x = limit;
+                    moved += 1;
+                }
             }
         });
         return moved;
