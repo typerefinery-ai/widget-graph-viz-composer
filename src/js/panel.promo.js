@@ -960,6 +960,15 @@ window.Widgets.Panel.Promo = {}
                 //     console.log("d is ->", d)
                 //     return d.radius;
                 // }))
+                // alpha-launch docs/issues/0078 - do NOT reach for collide strength/iterations here.
+                // Tried 2026-08-11 (.strength(1).iterations(3)) and A/B measured on the same
+                // fixture: 3 of 70 nodes occluded WITHOUT it, 4 of 70 WITH it - no improvement, and
+                // inside the run-to-run noise of a stochastic layout.
+                //
+                // The reason it cannot help: in both arms every surviving overlap sat on a CLAMP
+                // boundary (y = 9, 18, 319), and clampNodesToPanel runs AFTER the simulation on each
+                // tick. No force can undo a clamp applied downstream of it. The lever is the
+                // separation pass in panel.forcegraph.js, not this force.
                 .force("collide", d3.forceCollide(ns.options.iconSize))
                 // .force("charge", d3.forceManyBody().strength(-200)) // This adds repulsion (if it's negative) between nodes. 
                 .force("charge", d3.forceManyBody().strength(-500)) // This adds repulsion (if it's negative) between nodes. 

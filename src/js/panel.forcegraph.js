@@ -529,9 +529,61 @@ window.Widgets.Panel.ForceGraph = {}
                 `ForceGraph.settle: ${name} settled over ${ns.SETTLE_TICKS} ticks ` +
                 `(alpha now ${sim.alpha().toFixed(3)})`
             );
+            ns.reportOverlaps(name, typeof sim.nodes === "function" ? sim.nodes() : null);
         } catch (error) {
             console.error(`ForceGraph.settle: ${name} failed to settle`, error);
         }
+    };
+
+    /**
+     * Report how many settled nodes still overlap another node.
+     *
+     * alpha-launch docs/issues/0078. An occluded node is not a cosmetic problem: the node on top
+     * takes the pointer, so the one beneath cannot be selected at all, and P3-S9 failed on exactly
+     * that ("<image id=...> intercepts pointer events", 30s timeout). Until this was measured, the
+     * only symptom was a click that never landed - several layers away from the cause.
+     *
+     * Overlap is judged on the DRAWN box (iconSize + 5, as the panes render it), so this reports
+     * what a user can actually click, not what the simulation intended.
+     *
+     * @param {string} name panel name, for logging
+     * @param {Array<object>} nodes settled simulation nodes
+     * @returns {number} count of nodes overlapped by at least one other
+     */
+    ns.reportOverlaps = function (name, nodes) {
+        if (!nodes || !nodes.length) {
+            return 0;
+        }
+        const drawn = (panelUtilsNs && panelUtilsNs.options && panelUtilsNs.options.iconSize ? panelUtilsNs.options.iconSize : 40) + 5;
+        const positioned = nodes.filter(function (n) {
+            return n && typeof n.x === "number" && typeof n.y === "number";
+        });
+        const occluded = new Set();
+        let worst = null;
+        for (let i = 0; i < positioned.length; i++) {
+            for (let j = i + 1; j < positioned.length; j++) {
+                const a = positioned[i];
+                const b = positioned[j];
+                const dx = Math.abs(a.x - b.x);
+                const dy = Math.abs(a.y - b.y);
+                if (dx < drawn && dy < drawn) {
+                    occluded.add(a.id).add(b.id);
+                    const gap = Math.max(dx, dy);
+                    if (worst === null || gap < worst.gap) {
+                        worst = { gap: Math.round(gap), a: a.id, b: b.id };
+                    }
+                }
+            }
+        }
+        if (occluded.size) {
+            console.warn(
+                `ForceGraph.overlaps: ${name} has ${occluded.size}/${positioned.length} nodes overlapping ` +
+                `(drawn ${drawn}px; tightest pair ${worst.gap}px apart: ${worst.a} / ${worst.b}) - docs/issues/0078`
+            );
+        } else {
+            console.log(`ForceGraph.overlaps: ${name} clean - 0/${positioned.length} nodes overlap`);
+        }
+        return occluded.size;
     };
 
     /**
