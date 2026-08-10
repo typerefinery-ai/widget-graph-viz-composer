@@ -352,6 +352,57 @@ window.Widgets.Panel.ForceGraph = {}
                 }
             }
         });
+
+        // ⚠️ alpha-launch docs/issues/0078, second pass. The spreading above separates clamped nodes
+        // from EACH OTHER, which leaves two gaps that P3-S9 fell through:
+        //
+        //   1. `row.length < 2` returns early, so a node that is the ONLY one on its edge is never
+        //      considered - yet it can still land on an interior node.
+        //   2. Even when spread, a node slid along the edge can come to rest on top of a nearby
+        //      INTERIOR node, which the row grouping never looks at.
+        //
+        // The measured failure was exactly (2): identity--1c0f9a52 at y=302.97 (interior) covered by
+        // relationship--c787f6b9 at y=318 (clamped to maxY). Collide cannot fix these - it runs
+        // BEFORE the clamp each tick, so the clamp has the last word (negative result recorded in
+        // panel.promo.js).
+        //
+        // So resolve each clamped node against EVERY node in the pane, not just its edge peers.
+        // Bounded to a few passes: moving a node can land it on another, but looping until clean
+        // risks never terminating on a crowded edge - better to improve and stop than to hang.
+        const positioned = nodes.filter(function (n) {
+            return n && typeof n.x === "number" && typeof n.y === "number";
+        });
+        const overlaps = function (node, other) {
+            return other !== node && Math.abs(other.x - node.x) < drawn && Math.abs(other.y - node.y) < drawn;
+        };
+        clampedToEdge.forEach(function (node) {
+            for (let pass = 0; pass < 4; pass++) {
+                let hit = null;
+                for (let i = 0; i < positioned.length; i++) {
+                    if (overlaps(node, positioned[i])) {
+                        hit = positioned[i];
+                        break;
+                    }
+                }
+                if (!hit) {
+                    return;
+                }
+                // Slide away along x, and if that would leave the panel, try the other side.
+                // Containment still wins: nothing here moves a node out of [minX, maxX], so
+                // P3-S1's containment invariant is unaffected.
+                const away = node.x >= hit.x ? 1 : -1;
+                let target = hit.x + away * drawn;
+                if (target > maxX || target < minX) {
+                    target = hit.x - away * drawn;
+                }
+                target = Math.max(minX, Math.min(maxX, target));
+                if (target === node.x) {
+                    return; // no room on this edge; leave it rather than oscillate
+                }
+                node.x = target;
+                moved += 1;
+            }
+        });
         return moved;
     };
 
