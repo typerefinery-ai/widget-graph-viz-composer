@@ -375,6 +375,12 @@ window.Widgets.Panel.ForceGraph = {}
         const overlaps = function (node, other) {
             return other !== node && Math.abs(other.x - node.x) < drawn && Math.abs(other.y - node.y) < drawn;
         };
+        // ⚠️ Counted SEPARATELY from `moved`, and deliberately not added to the return value.
+        // `moved` means "how many nodes containment had to pull back in" - P3-S1 injects 4
+        // out-of-bounds probes and asserts exactly that number. Folding de-overlap moves into it
+        // made the function return 5 for 4 probes and turned P3-S1 red. Two different jobs, two
+        // different counters.
+        let separated = 0;
         clampedToEdge.forEach(function (node) {
             for (let pass = 0; pass < 4; pass++) {
                 let hit = null;
@@ -400,9 +406,13 @@ window.Widgets.Panel.ForceGraph = {}
                     return; // no room on this edge; leave it rather than oscillate
                 }
                 node.x = target;
-                moved += 1;
+                separated += 1;
             }
         });
+        if (separated) {
+            ns.separatedLast = (ns.separatedLast || {});
+            ns.separatedLast[panelSelector] = separated;
+        }
         return moved;
     };
 
