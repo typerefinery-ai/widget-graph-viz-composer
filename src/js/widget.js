@@ -363,6 +363,14 @@ window.Widgets.Widget = {};
                 .style("max-width", panelUtilsNs.theme.tooltip.maxwidth)
                 .style("overflow-x", panelUtilsNs.theme.tooltip.overeflow)
                 .style("padding",  panelUtilsNs.theme.tooltip.padding)
+                // docs/issues/0084 — hidden by `opacity: 0` alone, this div keeps `display: block`,
+                // `z-index: 10` and its last position, so it stays a hit target and can swallow the
+                // click that follows a hover. Confirmed active in the Overview fork, where the
+                // tooltip is anchored under the pointer; here the fault is latent rather than
+                // demonstrated (this file does not position it), but an invisible decorative
+                // tooltip should never be clickable either way.
+                // The forcegraph tooltip (panel.forcegraph.js:95) already sets this inline.
+                .style("pointer-events", "none")
                 .style('opacity', 0);
 
 
