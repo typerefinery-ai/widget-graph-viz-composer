@@ -587,23 +587,42 @@ window.Widgets.Panel.Promo = {}
         console.log("eventObjectData", eventObjectData);
         console.log("open next form for create SRO", dataForForm);
 
-        //"object_form": "incident",
-        //"object_group": "sdo-forms",
-        //"object_family": "stix-forms"
-        let objectForm = eventObjectData.source.object_form;
-        let objectGroup = eventObjectData.source.object_group;
-        let objectFamily = eventObjectData.source.object_family;
+        // docs/issues/0102 — two defects fixed here. Both only bite because the host's event
+        // fan-out broadcasts this event to EVERY mapping on the component instead of just the one
+        // it names (that is the trigger, and it is defect 1, in the page events clientlib — see the
+        // issue's Option 4). While that stands, the `…-object` mapping also fires on this event and
+        // builds its URL from these keys, so they must be right.
+        //
+        // Defect 2 — KEY CASE. These were `objectForm` / `objectGroup` / `objectFamily`, but the
+        // authored template reads `$.config.object_family` etc. and `replaceRegex` substitutes ""
+        // for an unmatched key. All three missed, producing
+        //   …/stixorm-forms///-forms/-update.html   -> the CMS 404 that ended Act 3's headline write.
+        // The sibling emitters already use snake_case (`formOpenConnection` below; the leftclick
+        // path in panel._utils.js), so this function was the outlier.
+        //
+        // Defect 3 — WRONG OBJECT. These read `eventObjectData.source.*`, i.e. the classification of
+        // the object the relationship starts FROM (e.g. stix-forms/sdo-forms/identity). What was
+        // just created is the relationship, so with the key case alone fixed this would have opened
+        // *identity-update.html* — a wrong form rather than a broken one. A relationship's own
+        // classification is fixed in this dialect and is what the store carries for SRO nodes
+        // (verified: relationship nodes in /viz-data/unattached-split carry exactly these three).
+        // Domain vocabulary is allowed here — this is an os-triage application-layer widget, not the
+        // generic template (CLAUDE.md, Data-Agnostic Repositories).
+        const objectFamily = "stix-forms";
+        const objectGroup = "sro-forms";
+        const objectForm = "relationship";
         let formAction = "create"
 
         const eventName = "embed-viz-event-open-stixorm-forms-sro-forms-relationship-form";
         const formId = eventName;
         const config = {
             formId: formId,
-            objectForm: objectForm,
-            objectGroup: objectGroup,
-            objectFamily: objectFamily,
+            object_form: objectForm,
+            object_group: objectGroup,
+            object_family: objectFamily,
             formAction: formAction,
         };
+        console.log("formOpenCRO classification (relationship, not source)", config);
         const action = "BUTTON_CLICK";
 
         console.log("compileEventData", dataForForm, eventName, action, formId, config);
