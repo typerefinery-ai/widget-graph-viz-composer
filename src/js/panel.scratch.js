@@ -371,17 +371,43 @@ window.Widgets.Panel.Scratch = {}
                         }
                     });
         
+                /**
+                 * Keep every node INSIDE the pane — docs/issues/0065, and a regression this
+                 * session's collide radius caused.
+                 *
+                 * ⚠️ Measured: adding `forceCollide(iconSize * 2)` for the labels puts node centres
+                 * ≥140px apart, which is fine in the ~660px pane of a maximised browser and **too
+                 * wide for the ~395px pane the Playwright viewport produces**. Nodes were pushed to
+                 * and past the edges — a failure screenshot shows `Unauthorised P…` clipped at the
+                 * right edge and `Finance Team Lead` gone entirely. P3-S6 and P3-S8 both click a
+                 * Scratch node, so the suite failed **intermittently and on a rotating step**,
+                 * depending on which node landed outside that run.
+                 *
+                 * Clamping the simulation's own coordinates (rather than only the drawn position)
+                 * means the next tick starts from the corrected value, so nodes settle against the
+                 * boundary instead of fighting it. The margin covers the icon and the label beneath.
+                 */
+                const pane = ns.scratch_svg && ns.scratch_svg.node();
+                const paneW = (pane && pane.clientWidth) || 0;
+                const paneH = (pane && pane.clientHeight) || 0;
+                const margin = ns.options.iconSize;
+                const clamp = (v, max) =>
+                    max > margin * 2 ? Math.max(margin, Math.min(max - margin, v)) : v;
+
                 ns.scratch_svg_root
                     .selectAll('.snodes')
-                    .attr('x', function(d) { 
+                    .attr('x', function(d) {
                         if (d.x && isNaN(d.x) === false) {
+                         d.x = clamp(d.x, paneW);
                          return d.x - ns.options.iconSize / 2;
                         } else {
                             return ns.options.iconSize / 2;
                         }
-                    }) 
-                    .attr('y', function(d) { 
+                    })
+                    .attr('y', function(d) {
                         if (d.y && isNaN(d.y) === false) {
+                         // Extra room at the bottom so the label under the last row is not clipped.
+                         d.y = clamp(d.y, paneH - panelUtilsNs.LABEL_PX - panelUtilsNs.LABEL_GAP_PX);
                          return d.y - ns.options.iconSize / 2;
                         } else {
                             return ns.options.iconSize / 2;
