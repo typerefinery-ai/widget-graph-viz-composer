@@ -23,6 +23,14 @@ window.Widgets.Panel.Promo = {}
         ns.promo_svg_root.selectAll('.pedgepath').remove();
         ns.promo_svg_root.selectAll('.pedgelabel').remove();
         ns.promo_svg_root.selectAll('.pnodes').remove();
+        // docs/issues/0159 — tear the node labels down with everything else.
+        //
+        // ⚠️ Omitting this in the Scratch pane left the previous generation of labels in the DOM,
+        // and the pane re-renders on each load event, so a second set was drawn over the first. Two
+        // generations settle at different positions and read as interleaved nonsense
+        // (`Sockmalwarection`) — which looks like a font or collision fault and is neither.
+        ns.promo_svg_root.selectAll('.pnode-label').remove();
+        ns.promo_svg_root.selectAll('#promo_node_labels').remove();
 
         if (ns.promotable_sim) {
             ns.promotable_sim.stop();
@@ -898,6 +906,34 @@ window.Widgets.Panel.Promo = {}
                 .on('end', ns.dragended), //end - after an active pointer becomes inactive (on mouseup, touchend or touchcancel).
             );
 
+        /**
+         * Name each Promotable object under its icon — docs/issues/0159, matching the Scratch pane.
+         *
+         * ⚠️ **Gated on node count, deliberately.** `image5.png` shows ~8 objects here and the build
+         * currently has **64**; at that density labels overlap into a grey mat that is worse than no
+         * labels at all. `shouldLabel()` suppresses them above the threshold **and logs why**, so a
+         * pane with no names reads as a decision rather than a bug — and the labels come back on
+         * their own once alpha-launch docs/issues/0138 phase 2 prunes the pane, with no further code
+         * change needed.
+         *
+         * `pointer-events: none` is required, not tidy: these sit over the icons' click targets and
+         * P3-S5 (*left-select opens that object's Update form*) is Act 3's headline step.
+         */
+        if (panelUtilsNs.shouldLabel(panelUtilsNs.split.promo.nodes, 'promo')) {
+            ns.promoNodeLabel = ns.promo_svg_root
+                .append('g')
+                .attr('id', 'promo_node_labels')
+                .selectAll('text')
+                .data(panelUtilsNs.split.promo.nodes)
+                .join('text')
+                .attr('class', 'pnode-label')
+                .style('pointer-events', 'none')
+                .style('user-select', 'none')
+                .style('text-anchor', 'middle')
+                .style('fill', panelUtilsNs.theme.svgName)
+                .attr('font-size', panelUtilsNs.LABEL_PX)
+                .text(panelUtilsNs.nodeLabel);
+        }
 
         ns.promotable_sim
             .nodes(panelUtilsNs.split.promo.nodes)
@@ -932,6 +968,13 @@ window.Widgets.Panel.Promo = {}
                     .selectAll('.pnodes')
                     .attr('x', (d) => d.x - ns.options.iconSize / 2)
                     .attr('y', (d) => d.y - ns.options.iconSize / 2);
+
+                // docs/issues/0159 — keep each label under its own icon. A no-op selection when
+                // labels are suppressed, so this costs nothing at 64 nodes.
+                ns.promo_svg_root
+                    .selectAll('.pnode-label')
+                    .attr('x', (d) => d.x)
+                    .attr('y', (d) => d.y + ns.options.iconSize / 2 + panelUtilsNs.LABEL_GAP_PX);
         
                 ns.promo_svg_root.selectAll('.pedgepath').attr(
                     'd',

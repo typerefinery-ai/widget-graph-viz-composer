@@ -300,6 +300,36 @@ window.Widgets.Events = window.Widgets.Events || {};
     ns.LABEL_PX = 11;      // desired on-screen font size
     ns.LABEL_GAP_PX = 6;   // desired on-screen gap between icon bottom and text top
 
+    /**
+     * Above this many nodes in a pane, labels are **suppressed rather than drawn illegibly**.
+     *
+     * ⚠️ Labels are only worth having if they can be read. Promotable currently holds **64** objects
+     * where `image5.png` shows ~8; at that density the names overlap into a grey mat that is worse
+     * than bare icons — the Overview hit exactly this at 28 nodes (docs/issues/0107) and answered it
+     * with a declutter pass that *hides* colliding labels, i.e. the same admission in a subtler form.
+     *
+     * A threshold is chosen over declutter here because it is honest about what is happening: with a
+     * declutter pass a viewer sees *some* names and cannot tell which are missing, whereas an
+     * all-or-nothing rule leaves the pane obviously unlabelled and logs why. It also means the
+     * labels **appear on their own** once alpha-launch docs/issues/0138 phase 2 prunes the pane —
+     * the curation decision does not then need a follow-up code change.
+     *
+     * 12 rather than ~8: the design's count is the target, not a limit, and a pane that lands
+     * slightly above it should still read.
+     */
+    ns.LABEL_MAX_NODES = 12;
+
+    /** Decide, and say so — a pane with no labels should never look like a bug. */
+    ns.shouldLabel = function(nodes, paneName) {
+        const count = Array.isArray(nodes) ? nodes.length : 0;
+        const on = count > 0 && count <= ns.LABEL_MAX_NODES;
+        console.log(
+            `[${paneName}] node labels ${on ? 'ON' : 'SUPPRESSED'} — ${count} node(s), threshold ${ns.LABEL_MAX_NODES}` +
+            (on ? '' : ' (alpha-launch docs/issues/0159; prune the pane and they return by themselves)'),
+        );
+        return on;
+    };
+
     ns.nodeLabel = function(d) {
         const raw = (d && d.name != null) ? String(d.name).trim() : "";
         const looksLikeStixId = /^[a-z0-9-]+--[0-9a-f-]{8,}$/i.test(raw);

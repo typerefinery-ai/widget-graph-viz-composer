@@ -282,26 +282,30 @@ window.Widgets.Panel.Scratch = {}
          * Appended AFTER the images so text draws on top, and positioned in the tick handler
          * alongside the icons.
          */
-        ns.scratchNodeLabel = ns.scratch_svg_root
-            .append('g')
-            .attr('id', 'scratch_node_labels')
-            .selectAll('text')
-            .data(panelUtilsNs.split.scratch.nodes)
-            .join('text')
-            .attr('class', 'snode-label')
-            .style('pointer-events', 'none')
-            .style('user-select', 'none')
-            .style('text-anchor', 'middle')
-            .style('fill', panelUtilsNs.theme.svgName)
-            .attr('font-size', panelUtilsNs.LABEL_PX)
-            .text(panelUtilsNs.nodeLabel);
+        // Gated by the SAME rule as Promotable (`shouldLabel`), so the two panes cannot drift apart.
+        // Scratch sits well under the threshold today (~5 objects), but it is topped up by seeding
+        // and by Create SRO, so it is not permanently small — a special case here would be a bug
+        // waiting for the day it grows.
+        if (panelUtilsNs.shouldLabel(panelUtilsNs.split.scratch.nodes, 'scratch')) {
+            ns.scratchNodeLabel = ns.scratch_svg_root
+                .append('g')
+                .attr('id', 'scratch_node_labels')
+                .selectAll('text')
+                .data(panelUtilsNs.split.scratch.nodes)
+                .join('text')
+                .attr('class', 'snode-label')
+                .style('pointer-events', 'none')
+                .style('user-select', 'none')
+                .style('text-anchor', 'middle')
+                .style('fill', panelUtilsNs.theme.svgName)
+                .attr('font-size', panelUtilsNs.LABEL_PX)
+                .text(panelUtilsNs.nodeLabel);
 
-        console.log(
-            'scratch node labels ->',
-            panelUtilsNs.split.scratch.nodes.length,
-            'node(s):',
-            panelUtilsNs.split.scratch.nodes.map(panelUtilsNs.nodeLabel).join(' · '),
-        );
+            console.log(
+                'scratch node labels ->',
+                panelUtilsNs.split.scratch.nodes.map(panelUtilsNs.nodeLabel).join(' · '),
+            );
+        }
 
         console.log("panelUtilsNs.split.scratch.nodes->",panelUtilsNs.split.scratch.nodes);
         console.log("panelUtilsNs.split.scratch.edges->",panelUtilsNs.split.scratch.edges);
