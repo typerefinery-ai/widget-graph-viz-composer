@@ -275,6 +275,38 @@ window.Widgets.Events = window.Widgets.Events || {};
      * @param {object} item entry from ns.selection.list
      * @returns {string} "promo", "scratch", or "unknown"
      */
+    /**
+     * What a Composer pane node should say under its icon — alpha-launch docs/issues/0159.
+     *
+     * ⚠️ Until this existed, **neither pane labelled its nodes at all**. The only text was edge
+     * labels on a `textPath` and the pane's own title, so every Promotable and Scratch object was an
+     * anonymous coloured icon — while `docs/mini-app-source/image5.png` names all of them
+     * (*Potential Threat Address*, *Sighting Alert:*, *Unauthorised Process*…). Scratch was worst:
+     * its objects are unconnected **by definition** (the docx: *"Scratch holds items not yet
+     * connected to a Promotable"*), so with no edges there was no text on screen whatsoever.
+     *
+     * 🔑 **The rule is ported from the Overview widget** rather than invented — see
+     * `widget-graph-viz-overview/src/js/widget.js` `ns.nodeLabel` and its docs/issues/0107 notes,
+     * which already worked this out against real demo data:
+     *   - label with `name`, but **never render a raw STIX id** — fall back to `heading`, the shaped
+     *     type name, which is at least true;
+     *   - show the weak-but-not-id cases (`event`, `task`, a bare number) **as they are**, because
+     *     they are the shaper's output and hiding them would conceal docs/issues/0140;
+     *   - truncate, so one long value cannot dominate the pane.
+     *
+     * Keeping the two widgets' rule identical matters: the same object appears in both, and a node
+     * that reads `Naive Smith` in the Overview must not read something else in the Composer.
+     */
+    ns.LABEL_PX = 11;      // desired on-screen font size
+    ns.LABEL_GAP_PX = 6;   // desired on-screen gap between icon bottom and text top
+
+    ns.nodeLabel = function(d) {
+        const raw = (d && d.name != null) ? String(d.name).trim() : "";
+        const looksLikeStixId = /^[a-z0-9-]+--[0-9a-f-]{8,}$/i.test(raw);
+        const text = (!raw || looksLikeStixId) ? String((d && d.heading) || "") : raw;
+        return text.length > 28 ? text.slice(0, 27) + "…" : text;
+    };
+
     ns.panelOfSelection = function(item) {
         const node = item && item.element && item.element.node && item.element.node();
         if (!node || !node.closest) {

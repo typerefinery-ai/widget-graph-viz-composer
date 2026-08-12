@@ -23,6 +23,15 @@ window.Widgets.Panel.Scratch = {}
         ns.scratch_svg_root.selectAll('.sedgepath').remove();
         ns.scratch_svg_root.selectAll('.sedgelabel').remove();
         ns.scratch_svg_root.selectAll('.snodes').remove();
+        // docs/issues/0159 — the node labels must be torn down with everything else.
+        //
+        // ⚠️ Measured while adding them: omitting this line left the previous generation of labels in
+        // the DOM, and the pane re-renders on each load event, so a fresh set was drawn over the old
+        // one. Two generations settle at different positions, and the result reads as interleaved
+        // nonsense — `Sockmalwarection` — which looks like a font or collision problem and is neither.
+        // Every class this panel creates has to appear in this teardown; a new one is easy to forget.
+        ns.scratch_svg_root.selectAll('.snode-label').remove();
+        ns.scratch_svg_root.selectAll('#scratch_node_labels').remove();
 
         if (ns.scratch_sim) {
             ns.scratch_sim.stop();
@@ -113,8 +122,37 @@ window.Widgets.Panel.Scratch = {}
                             .id(d => d.id) // This sets the node id accessor to the specified function. If not specified, will default to the index of a node.
                             .strength(20)
             ) 
-            .force("charge", d3.forceManyBody().strength(-20)) // This adds repulsion (if it's negative) between nodes. 
-            .force("center", d3.forceCenter(ns.options.width / 2, ns.options.height / 2)); // This force attracts nodes to the center of the svg area
+            .force("charge", d3.forceManyBody().strength(-60)) // This adds repulsion (if it's negative) between nodes.
+            .force("center", d3.forceCenter(ns.options.width / 2, ns.options.height / 2)) // This force attracts nodes to the center of the svg area
+            /**
+             * Keep Scratch nodes far enough apart that their LABELS are readable — docs/issues/0159.
+             *
+             * ⚠️ This pane had **no collide force at all**, only `charge(-20)` and `center`, so its
+             * nodes settled almost on top of one another. That was invisible while nodes were
+             * unlabelled icons; the moment labels were added the pane rendered
+             * `UsSoctbolised PtoduFanultce Team Lead` — five overlapping names, illegible.
+             *
+             * 🔑 **The fix is separation, not hiding.** The Overview's answer to the same problem was
+             * `declutterLabels()` — drop any label that would overlap one already drawn — which is
+             * right for **28** nodes where spreading them is impossible. Scratch holds ~5 and
+             * `image5.png` shows them **spread across the pane**, so spacing them is both achievable
+             * and what the design actually depicts; hiding names would defeat the point of adding them.
+             *
+             * Radius is `iconSize * 2` rather than `iconSize` (the Overview's value, docs/issues/0155):
+             * a node's footprint here includes the text under it, so an icon-sized radius still let
+             * labels touch. At radius 70 the centres end up ≥140px apart, which clears a label of up
+             * to ~140px — comfortably more than the 28-character cap `nodeLabel` applies.
+             *
+             * ⚠️ **`collide` does the work; do not reach for a big charge.** Measured while building
+             * this: raising `charge` from -20 to **-400** to spread the nodes threw two of the five
+             * *outside the pane's visible area* (docs/issues/0065's failure mode) and still left two
+             * labels overlapping. Charge is nudged -20 → -60 only to help the layout settle apart;
+             * the guaranteed minimum spacing comes from the collide radius, which cannot overshoot.
+             *
+             * ⚠️ If Scratch ever holds many more objects, spacing alone will stop being enough and
+             * this should gain the Overview's declutter pass rather than an ever-larger radius.
+             */
+            .force("collide", d3.forceCollide(ns.options.iconSize * 2));
 
         console.groupEnd();
 
@@ -227,6 +265,44 @@ window.Widgets.Panel.Scratch = {}
 
         console.log("ns.scratchNode->", ns.scratchNode);
 
+        /**
+         * Name every Scratch object under its icon — alpha-launch docs/issues/0159.
+         *
+         * ⚠️ Scratch had **no text on screen at all**. Its objects are unconnected by definition, so
+         * the pane's only `.text()` — an edge label on a `textPath` — never rendered anything, and
+         * nodes were never labelled. `image5.png` shows all three Scratch objects named
+         * (*Unauthorised Process*, *Socket Connection*, *malware*), so this was a plain
+         * design-likeness gap, not a density trade-off: this pane holds ~5 objects and cannot collide.
+         *
+         * ⚠️ `pointer-events: none` is **required, not tidiness**. The label sits over the icon's
+         * click target, and P3-S5 (*left-select opens that object's Update form*) is Act 3's headline
+         * step — a label that swallowed the click would break it. The neighbouring pane already
+         * intercepted Promo's clicks once (docs/issues/0058), so this failure mode is not theoretical.
+         *
+         * Appended AFTER the images so text draws on top, and positioned in the tick handler
+         * alongside the icons.
+         */
+        ns.scratchNodeLabel = ns.scratch_svg_root
+            .append('g')
+            .attr('id', 'scratch_node_labels')
+            .selectAll('text')
+            .data(panelUtilsNs.split.scratch.nodes)
+            .join('text')
+            .attr('class', 'snode-label')
+            .style('pointer-events', 'none')
+            .style('user-select', 'none')
+            .style('text-anchor', 'middle')
+            .style('fill', panelUtilsNs.theme.svgName)
+            .attr('font-size', panelUtilsNs.LABEL_PX)
+            .text(panelUtilsNs.nodeLabel);
+
+        console.log(
+            'scratch node labels ->',
+            panelUtilsNs.split.scratch.nodes.length,
+            'node(s):',
+            panelUtilsNs.split.scratch.nodes.map(panelUtilsNs.nodeLabel).join(' · '),
+        );
+
         console.log("panelUtilsNs.split.scratch.nodes->",panelUtilsNs.split.scratch.nodes);
         console.log("panelUtilsNs.split.scratch.edges->",panelUtilsNs.split.scratch.edges);
         console.log("slinks->", ns.scratch_svg_root.selectAll('.slinks'));
@@ -308,6 +384,19 @@ window.Widgets.Panel.Scratch = {}
                         }
                     })
         
+                // docs/issues/0159 — keep each label under its own icon. Centred on the node's x
+                // (text-anchor: middle) and offset below the icon's bottom edge, so it tracks the
+                // node for the whole settling animation rather than only its final position.
+                ns.scratch_svg_root
+                    .selectAll('.snode-label')
+                    .attr('x', function(d) {
+                        return (d.x && isNaN(d.x) === false) ? d.x : ns.options.iconSize / 2;
+                    })
+                    .attr('y', function(d) {
+                        const cy = (d.y && isNaN(d.y) === false) ? d.y : ns.options.iconSize / 2;
+                        return cy + ns.options.iconSize / 2 + panelUtilsNs.LABEL_GAP_PX;
+                    })
+
                 ns.scratch_svg_root.selectAll('.sedgepath').attr(
                     'd',
                     function(d) {
