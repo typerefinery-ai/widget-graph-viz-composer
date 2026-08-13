@@ -177,14 +177,52 @@ window.Widgets.Panel.Promo = {}
                     let getRelationshipTypesCallback = function(id, eventData, eventHandlerId) {
                         console.groupCollapsed(`widget getRelationshipTypesCallback on ${window.location}`);
 
+                        /**
+                         * ⚠️ A CRASHED algorithm answers HTTP 200 — check the body before using it.
+                         * alpha-launch docs/issues/0167.
+                         *
+                         * `get-relationship-types` returns `{"error":"true","script.name":"req-….py"}`
+                         * with a **200** when its Python raised. `reln_form_values` is then absent, so
+                         * the very next line — `eventData.data.reln_form_values.source_ref` — threw a
+                         * TypeError, this callback died, and **the modal was never opened**: no error,
+                         * no toast, nothing. Measured against an invalid `network-traffic` object,
+                         * whose `AtLeastOnePropertyError` cost hours of investigation precisely
+                         * because the transport said 200 (docs/issues/0166).
+                         *
+                         * 🔑 The guard below (`if (!dataForForm.object.source_ref …)`) was written for
+                         * this case and could never run — it sits *after* the dereference that throws.
+                         * Checking first is what makes it reachable.
+                         *
+                         * ⬜ This is the caller-side half. The durable fix is for the runner to answer
+                         * a non-2xx when its algorithm raised, so `response.ok` means what every caller
+                         * already assumes — verified 2026-08-13 that **no** widget inspects `error`, so
+                         * that change would break nothing.
+                         */
+                        const responseData = (eventData && eventData.data) || {}
+                        if (String(responseData.error) === "true" || !responseData.reln_form_values) {
+                            console.error(
+                                "getRelationshipTypesCallback: the API returned an ERROR payload with HTTP 200 " +
+                                "(docs/issues/0167) - not opening the modal. script=" +
+                                (responseData["script.name"] || "(none)"),
+                                responseData
+                            );
+                            panelUtilsNs.showNotification(
+                                "error",
+                                "Create SRO failed: the server could not work out the valid relationship types " +
+                                "for these two objects. One of them may be incomplete."
+                            );
+                            console.groupEnd();
+                            return;
+                        }
+
                         // Shape must match the modal's field structure: sro-constraints nests its
                         // fields inside an "object" composite, so the payload is nested to match.
                         // (foreign-key-connections is flat - see getConnectionTypesCallback.)
                         let dataForForm = {
                             object: {
-                                relationship_type: eventData.data.relationship_type_list,
-                                source_ref: eventData.data.reln_form_values.source_ref,
-                                target_ref: eventData.data.reln_form_values.target_ref,
+                                relationship_type: responseData.relationship_type_list,
+                                source_ref: responseData.reln_form_values.source_ref,
+                                target_ref: responseData.reln_form_values.target_ref,
                             }
                         }
 
