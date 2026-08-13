@@ -205,6 +205,35 @@ stroke: #00557d;
 .widget-toast {
     position: fixed !important;
     z-index: 2147483647 !important;
+
+    /*
+     * A notification must never swallow a click meant for the app underneath.
+     *
+     * alpha-launch docs/issues/0148: this toast sits at the maximum z-index over the whole widget,
+     * so while it is on screen every click in its rectangle hits the toast instead of the graph.
+     * Measured there as P3-S12 failing with
+     *   "<div class="toastify on widget-toast toast-success ..."> intercepts pointer events"
+     * retried for the full 120s timeout, with the node reported "visible, enabled and stable" every
+     * time. Toasts are queued (up to 10, 5s each), so a run that emits several can block the pane for
+     * the best part of a minute.
+     *
+     * ⚠️ This is NOT only a test problem. The same rectangle is dead to a PRESENTER: any click landing
+     * top-right while a success toast is up is silently eaten, during the Act that is meant to show
+     * the product responding to every gesture.
+     *
+     * The close button opts back in below, so the toast stays dismissable.
+     */
+    pointer-events: none;
+}
+
+/*
+ * ...but the close control must still be clickable, or `close: true` becomes decorative.
+ * ⚠️ Known trade-off: `stopOnFocus` (pause-on-hover) no longer applies to the toast BODY, because
+ * hovering needs pointer events. Hovering the close button still works. A transient 5s notice that
+ * cannot block the application is the better trade — the app underneath is the product.
+ */
+.widget-toast .toast-close {
+    pointer-events: auto;
 }
 
 .split {
