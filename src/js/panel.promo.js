@@ -920,6 +920,10 @@ window.Widgets.Panel.Promo = {}
             .style('font-family', ns.options.edgeFontFamily)
             .attr('fill', panelUtilsNs.theme.edges);
 
+        // The node-label decision is taken ONCE here and reused for the node labels further down, so
+        // the edges and the icons can never disagree about which of them is carrying the text.
+        ns.promoNodeLabelsOn = panelUtilsNs.shouldLabel(panelUtilsNs.split.promo.nodes, 'promo');
+
         ns.promoEdgelabelsText = ns.promoEdgelabels
             .append('textPath') //To render text along the shape of a <path>, enclose the text in a <textPath> element that has an href attribute with a reference to the <path> element.
             .attr('xlink:href', function(d, i) {
@@ -928,7 +932,8 @@ window.Widgets.Panel.Promo = {}
             .style('text-anchor', 'middle')
             .style('pointer-events', 'none')
             .attr('startOffset', '50%')
-            .text((d) => d.name);
+            // decision 0040 Option 1 — quiet on a design-sized pane, fallback text on a dense one.
+            .text(panelUtilsNs.shouldLabelEdges(ns.promoNodeLabelsOn, 'promo') ? (d) => d.name : '');
 
         // Initialize the nodes with attached image, changed to join data
         // add hover over effect
@@ -976,7 +981,7 @@ window.Widgets.Panel.Promo = {}
          * `pointer-events: none` is required, not tidy: these sit over the icons' click targets and
          * P3-S5 (*left-select opens that object's Update form*) is Act 3's headline step.
          */
-        if (panelUtilsNs.shouldLabel(panelUtilsNs.split.promo.nodes, 'promo')) {
+        if (ns.promoNodeLabelsOn) {
             ns.promoNodeLabel = ns.promo_svg_root
                 .append('g')
                 .attr('id', 'promo_node_labels')

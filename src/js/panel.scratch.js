@@ -205,6 +205,10 @@ window.Widgets.Panel.Scratch = {}
 
         console.log("ns.scratchEdgepaths->", ns.scratchEdgepaths);
 
+        // Taken once here and reused for the node labels below, so the edges and the icons can never
+        // disagree about which of them is carrying the text (same shape as panel.promo.js).
+        ns.scratchNodeLabelsOn = panelUtilsNs.shouldLabel(panelUtilsNs.split.scratch.nodes, 'scratch');
+
         ns.scratchEdgelabels = ns.scratch_svg_root
             .selectAll('.sedgelabel')
             .data(panelUtilsNs.split.scratch.edges)
@@ -228,7 +232,8 @@ window.Widgets.Panel.Scratch = {}
             .style('text-anchor', 'middle')
             .style('pointer-events', 'none')
             .attr('startOffset', '50%')
-            .text((d) => d.name);
+            // decision 0040 Option 1 — gated by the SAME rule as Promotable so the panes cannot drift.
+            .text(panelUtilsNs.shouldLabelEdges(ns.scratchNodeLabelsOn, 'scratch') ? (d) => d.name : '');
 
         console.log("ns.scratchEdgelabelsText->", ns.scratchEdgelabelsText);
 
@@ -286,7 +291,7 @@ window.Widgets.Panel.Scratch = {}
         // Scratch sits well under the threshold today (~5 objects), but it is topped up by seeding
         // and by Create SRO, so it is not permanently small — a special case here would be a bug
         // waiting for the day it grows.
-        if (panelUtilsNs.shouldLabel(panelUtilsNs.split.scratch.nodes, 'scratch')) {
+        if (ns.scratchNodeLabelsOn) {
             ns.scratchNodeLabel = ns.scratch_svg_root
                 .append('g')
                 .attr('id', 'scratch_node_labels')

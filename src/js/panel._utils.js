@@ -319,6 +319,39 @@ window.Widgets.Events = window.Widgets.Events || {};
      */
     ns.LABEL_MAX_NODES = 12;
 
+    /**
+     * Should the EDGES carry their relationship names? — alpha-launch decision 0040, Option 1.
+     *
+     * ⚠️ Edge labels are **inherited template behaviour** (`b37e82b refactor graphns`), not a design
+     * requirement. `docs/mini-app-source/image5.png` draws the Composer's edges as plain curves with
+     * **no text on them at all**; the names beside the icons are node labels, which arrived much
+     * later with docs/issues/0159 specifically to match that mockup.
+     *
+     * Their original justification is recorded above: until 0159 *neither pane labelled its nodes*,
+     * so edge labels were the only text on screen. That premise is now false whenever node labels
+     * are on — and measured on the demo cast they are actively harmful: **35 colliding text pairs in
+     * the Promotable pane, 28 of them (80%) involving a `*-ref` / `*-refs` edge label**. The SRO name
+     * fares worst: `relation_edges.json` holds two entries per SRO, so `derived-from` is painted
+     * three times (its node label plus both of its edges) and collides with itself.
+     *
+     * 🔑 So the rule is not "never" but **"only as a fallback"**: edge labels appear exactly when
+     * node labels are suppressed, which is the situation their original justification described. On
+     * a pane that matches the design (≤ `LABEL_MAX_NODES` nodes, names under the icons) the edges go
+     * quiet and the pane reads like image5. On a dense pane nothing is lost that was there before.
+     *
+     * Takes the node-label decision rather than recomputing it, so the two can never disagree and
+     * `shouldLabel` is not logged twice per render.
+     */
+    ns.shouldLabelEdges = function(nodeLabelsOn, paneName) {
+        const on = !nodeLabelsOn;
+        console.log(
+            `[${paneName}] edge labels ${on ? 'ON' : 'SUPPRESSED'} — node labels are ` +
+            `${nodeLabelsOn ? 'ON, so the edges stay quiet to match image5' : 'off, so the edges carry the only text'}` +
+            ' (alpha-launch decision 0040)',
+        );
+        return on;
+    };
+
     /** Decide, and say so — a pane with no labels should never look like a bug. */
     ns.shouldLabel = function(nodes, paneName) {
         const count = Array.isArray(nodes) ? nodes.length : 0;
