@@ -360,6 +360,25 @@ window.Widgets.Panel.Promo = {}
                         //   {"connection_field_list": ["created_by_ref"],
                         //    "connect_objects": {"source_ref": "...", "target_ref": "..."}}
                         // Reading the wrong key left the dropdown empty with everything else correct.
+                        // docs/issues/0167 - a CRASHED algorithm answers HTTP 200 with
+                        // {"error":"true","script.name":"req-....py"} instead of a result, so the
+                        // transport cannot be used to tell success from failure. Unlike the SRO
+                        // sibling this callback does not throw on that payload (connect_objects is
+                        // defaulted below), so it degrades to opening a modal with an EMPTY form -
+                        // which reads to a presenter as "it worked". Report it instead.
+                        //
+                        // Keyed on `error` ALONE, deliberately: an empty connection_field_list is a
+                        // legitimate answer for a valid pair with no connectable fields, so testing
+                        // the list here would fire on a working case. (The SRO guard must also test
+                        // for its payload's absence, because there the absence is what throws.)
+                        const responseData = (eventData && eventData.data) || {};
+                        if (String(responseData.error) === "true") {
+                            console.error("getConnectionTypesCallback: the API returned an ERROR payload with HTTP 200 " +
+                                "(docs/issues/0167) - not opening the modal. script=" + (responseData["script.name"] || "(none)"), responseData);
+                            panelUtilsNs.showNotification("error", "Create Connection failed: the server could not work out how these two objects can be connected. One of them may be incomplete.");
+                            console.groupEnd(); return;
+                        }
+
                         const connectObjects = (eventData.data && eventData.data.connect_objects) || {};
                         let dataForForm = {
                             connection_field_list: eventData.data.connection_field_list,
