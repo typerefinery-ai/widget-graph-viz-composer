@@ -117,7 +117,7 @@ window.Widgets.Panel.Promo = {}
             console.log("remove object response", { status: status, ok: response && response.ok, data: response && response.data });
 
             if (status === "success") {
-                panelUtilsNs.showNotification("success", "Object removed");
+                panelUtilsNs.showNotification("success", "Object removed", { duration: 10000 }); // docs/issues/0104 — write confirmations get 10s prominence
                 // Re-fetch so Promo and Scratch reflect the removal.
                 if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
                     window.Widgets.Widget.requestData();
@@ -526,7 +526,7 @@ window.Widgets.Panel.Promo = {}
                     if (typeof panelUtilsNs.dismissAllNotifications === "function") {
                         panelUtilsNs.dismissAllNotifications();
                     }
-                    panelUtilsNs.showNotification(kind, message);
+                    panelUtilsNs.showNotification(kind, message, { duration: 10000 }); // docs/issues/0104 — write confirmations get 10s prominence
                     // Both panes change: the sub-graph leaves unattached entirely.
                     if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
                         window.Widgets.Widget.requestData();

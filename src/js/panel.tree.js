@@ -228,7 +228,7 @@ window.Widgets.Panel.Tree = window.Widgets.Panel.Tree || {}
                     rawPayload: payloadResponse,
                 });
                 if (status === "success") {
-                    panelUtilsNs.showNotification("success", actionConfig.successMessage);
+                    panelUtilsNs.showNotification("success", actionConfig.successMessage, { duration: 10000 }); // docs/issues/0104 — write confirmations get 10s prominence
                     invokeSuccessCallback();
                 } else {
                     const errorDetail = payloadResponse?.message || actionConfig.errorMessage;
