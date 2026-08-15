@@ -28,14 +28,23 @@
             $('head').append(`<style class="scm-style">${style}</style>`)
         }
 
+        // alpha-launch docs/issues/0077 — the close handler used to fire on ANY document click,
+        // including the click ON a menu item, racing the item's own handler; combined with the
+        // animated open below, a click during the slide could land on the node underneath and
+        // SELECT it instead (measured: "Requests after the click: NONE" + an update form open).
+        // A fast human double-click hits the same window. Clicks inside the container are now
+        // ignored here — the item handler closes the menu itself, deterministically, after
+        // running the action.
         $(document).click(function (e) {
+            if ($(e.target).closest('.scm-container').length) {
+                return
+            }
             let container = $('div.scm-container');
             if (container.is(":visible")) {
-                container.fadeOut('fast', function () {
-                    if (typeof config.onHide === 'function') {
-                        config.onHide()
-                    }
-                })
+                container.hide()
+                if (typeof config.onHide === 'function') {
+                    config.onHide()
+                }
             }
         })
 
@@ -100,17 +109,19 @@
                 top = docHeight - containerHeight
             }
 
+            // docs/issues/0077 — instant show, not slideDown('fast'): during the animation the
+            // items are still moving into position, which is exactly the window where an
+            // actionability-checked click lands on the node beneath the menu.
             container
                 .css({
                     top: top,
                     left: left,
                     zIndex: 100
                 })
-                .slideDown('fast', function () {
-                    if (typeof config.onShow === 'function') {
-                        config.onShow()
-                    }
-                })
+                .show()
+            if (typeof config.onShow === 'function') {
+                config.onShow()
+            }
 
             container.find('div.scm-item').click(function () {
                 let index = $(this).data('index')
@@ -121,6 +132,12 @@
                 }
                 if ("action" in target && typeof target.action === 'function') {
                     target.action()
+                }
+                // docs/issues/0077 — the item handler owns the close now (the document handler
+                // ignores in-container clicks); instant hide, matching the instant show.
+                container.hide()
+                if (typeof config.onHide === 'function') {
+                    config.onHide()
                 }
             })
 
