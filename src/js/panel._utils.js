@@ -584,6 +584,12 @@ window.Widgets.Events = window.Widgets.Events || {};
                     "object_form": d.object_form,
                     "object_group": d.object_group,
                 }
+                // alpha-launch decision 0021 / issue 0133 — pass the SERVED form path
+                // through (see the overview fork's identical note; decision 0022 keeps
+                // the forks in step). The trio stays during the template transition.
+                if (d.form_path) {
+                    payloadOptions.form_path = d.form_path;
+                }
                 if (formId) {
                     console.log('open form for type', formId, formData, payloadOptions)
                     ns.openForm(formId, formData, payloadOptions);
