@@ -516,12 +516,55 @@ window.Widgets.Panel.Promo = {}
             console.log("promote response", { status: status, ok: response && response.ok });
 
             if (status === "success") {
-                panelUtilsNs.showNotification("success", "Promoted into the incident");
-                // Both panes change: the sub-graph leaves unattached entirely.
-                if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
-                    window.Widgets.Widget.requestData();
+                // docs/issues/0087 Option 1 — the reply is NOT the settled state: the flow keeps
+                // running after it answers (measured: an immediate refresh read 74→74 while the
+                // promotion was still in flight). Keep a visible promoting state up and poll the
+                // split until the target id has actually LEFT unattached, then refresh — the same
+                // settled-state contract P3-S12 already proves in the suite.
+                panelUtilsNs.showNotification("loading", "Promoting: waiting for the sub-graph to settle...");
+                const finishRefresh = function(kind, message) {
+                    if (typeof panelUtilsNs.dismissAllNotifications === "function") {
+                        panelUtilsNs.dismissAllNotifications();
+                    }
+                    panelUtilsNs.showNotification(kind, message);
+                    // Both panes change: the sub-graph leaves unattached entirely.
+                    if (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.requestData === "function") {
+                        window.Widgets.Widget.requestData();
+                    } else {
+                        console.warn("actionPromote: no requestData() to refresh with");
+                    }
+                };
+                const splitUrl = (window.Widgets && window.Widgets.Widget && typeof window.Widgets.Widget.apiBase === "function")
+                    ? window.Widgets.Widget.apiBase() + "/viz-data/unattached-split"
+                    : null;
+                if (!splitUrl) {
+                    finishRefresh("success", "Promoted into the incident");
                 } else {
-                    console.warn("actionPromote: no requestData() to refresh with");
+                    const settleStarted = Date.now();
+                    const SETTLE_POLL_MS = 1500;
+                    const SETTLE_BUDGET_MS = 30000;
+                    const settlePoll = function() {
+                        fetch(splitUrl)
+                            .then(function(r) { return r.json(); })
+                            .then(function(split) {
+                                const stillUnattached = JSON.stringify(split).indexOf(nodeData.id) !== -1;
+                                if (!stillUnattached) {
+                                    console.log("actionPromote: settled after " + (Date.now() - settleStarted) + "ms");
+                                    finishRefresh("success", "Promoted into the incident");
+                                } else if (Date.now() - settleStarted > SETTLE_BUDGET_MS) {
+                                    // honest, not alarming: the write is running, the panes just have
+                                    // not caught up inside the budget.
+                                    finishRefresh("warning", "Promotion is still settling — the panes will catch up shortly");
+                                } else {
+                                    window.setTimeout(settlePoll, SETTLE_POLL_MS);
+                                }
+                            })
+                            .catch(function(pollError) {
+                                console.warn("actionPromote: settle poll failed, refreshing anyway", pollError);
+                                finishRefresh("success", "Promoted into the incident");
+                            });
+                    };
+                    window.setTimeout(settlePoll, SETTLE_POLL_MS);
                 }
             } else {
                 const detail = (payloadResponse && payloadResponse.message) || "Failed to promote";
