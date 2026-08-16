@@ -1110,19 +1110,35 @@ window.Widgets.Panel.Promo = {}
                 .strength(0.05);
 
             ns.promotable_sim 
+                // alpha-launch docs/issues/0171 — strength 1 is right for AUTHORED coordinates and
+                // wrong for the centre fallback. ForceGraph.applyLayout anchors every node the API
+                // did not position to the SAME point (the pane centre) and its own comment says that
+                // is meant to leave "the existing charge and collide forces to spread them out" —
+                // which strength 1 makes impossible, because an absolute positional force beats
+                // charge outright. Result: 8 nodes on one coordinate, a 197x210 blob in a 456x398
+                // pane (23% fill) held apart only by collide.
+                //
+                // So honour authored positions exactly, and treat a fallback anchor as a weak hint.
+                // Not zero: with no anchor at all, charge (-500) drives everything onto
+                // clampNodesToPanel's boundary, which is where docs/issues/0078 measured every
+                // surviving overlap.
                 .force('x', d3.forceX().x(function(d) {
                     return d.positionX;
                 }).strength(function(d) {
                     // ignore forceX below the first two layers
                     if (d.positionX === 0) {
                         return 0;
+                    } else if (d.positionAnchored) {
+                        return 0.05;
                     } else {
                         return 1;
                     }
                 }))
                 .force('y', d3.forceY().y(function(d) {
                     return d.positionY;
-                }).strength(1))
+                }).strength(function(d) {
+                    return d.positionAnchored ? 0.05 : 1;
+                }))
                 // .force('collision', d3.forceCollide().radius(function(d) {
                 //     console.log("d is ->", d)
                 //     return d.radius;

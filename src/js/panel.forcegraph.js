@@ -444,10 +444,23 @@ window.Widgets.Panel.ForceGraph = {}
         let positioned = 0;
         nodes.forEach(function (node) {
             if (ns.hasLayoutPosition(node)) {
+                node.positionAnchored = false;
                 return;
             }
             node.positionX = centreX;
             node.positionY = centreY;
+            // alpha-launch docs/issues/0171 — mark this as a FALLBACK anchor, not authored data.
+            //
+            // The comment above says these are anchored to the centre "letting the existing charge
+            // and collide forces spread them out" — but panel.promo.js pins positionX/positionY with
+            // forceX/forceY at STRENGTH 1, which is absolute. Charge cannot spread anything against
+            // it, so all N unpositioned nodes sat on the one coordinate and the Promotable pane
+            // rendered a small dense blob (measured: 8 nodes, cluster 197x210 in a 456x398 pane,
+            // 23% fill, ~130px dead margin each side). The implementation defeated its own intent.
+            //
+            // Marking the anchor lets panel.promo.js pin AUTHORED coordinates exactly, as it must,
+            // while letting fallback ones be a gentle hint the other forces can work against.
+            node.positionAnchored = true;
             positioned += 1;
         });
 
