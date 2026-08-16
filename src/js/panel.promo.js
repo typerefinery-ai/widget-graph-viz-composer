@@ -1119,6 +1119,13 @@ window.Widgets.Panel.Promo = {}
                 // pane (23% fill) held apart only by collide.
                 //
                 // So honour authored positions exactly, and treat a fallback anchor as a weak hint.
+                // Strength TUNED BY MEASUREMENT, not guessed — same incident, same viewport:
+                //   0.05 -> fill 76%, margins L47 R12 T7 B43  — but a screenshot showed
+                //           "Microsoft Exchange" CLIPPED at the pane bottom edge. The occlusion
+                //           probe still read 0/15, because it measures node OVERLAP, not clipping.
+                //   0.12 -> fill 48%, margins L110 R66 T58 B30 — safe but back toward a blob.
+                //   0.08 -> fill 61%, margins L64 R73 T24 B27 — spread like image5, every label
+                //           fully inside the pane. Chosen.
                 // Not zero: with no anchor at all, charge (-500) drives everything onto
                 // clampNodesToPanel's boundary, which is where docs/issues/0078 measured every
                 // surviving overlap.
@@ -1129,7 +1136,7 @@ window.Widgets.Panel.Promo = {}
                     if (d.positionX === 0) {
                         return 0;
                     } else if (d.positionAnchored) {
-                        return 0.05;
+                        return 0.08;
                     } else {
                         return 1;
                     }
@@ -1137,7 +1144,7 @@ window.Widgets.Panel.Promo = {}
                 .force('y', d3.forceY().y(function(d) {
                     return d.positionY;
                 }).strength(function(d) {
-                    return d.positionAnchored ? 0.05 : 1;
+                    return d.positionAnchored ? 0.08 : 1;
                 }))
                 // .force('collision', d3.forceCollide().radius(function(d) {
                 //     console.log("d is ->", d)
