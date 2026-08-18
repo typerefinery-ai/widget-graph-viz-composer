@@ -441,14 +441,46 @@ window.Widgets.Panel.ForceGraph = {}
         const centreX = panel.width / 2;
         const centreY = panel.height / 2;
 
+        // alpha-launch docs/issues/0198 — SPREAD the fallback anchors instead of stacking them.
+        //
+        // 0171 made the fallback anchor gentle (strength 0.08 rather than 1) so charge could work
+        // against it, which took the pane from 23% fill to a measured 52%x57%. It stopped short of
+        // the other half: every unpositioned node still gets the SAME coordinate, so the gentle
+        // spring pulls all of them at one point and charge has to push the whole set outward from a
+        // single origin. The equilibrium that produces is a disc in the middle with a dead margin
+        // all round - the "nodes are all in a box" report.
+        //
+        // Seeding the anchors on a golden-angle (phyllotaxis) spiral instead gives each node its own
+        // hint, spaced evenly, with no preferred axis and no parameter to tune per node count. The
+        // spring is still gentle, so authored coordinates and the charge/collide forces all keep
+        // behaving exactly as before - this only changes WHERE the fallback nodes are hinted to.
+        //
+        // Radius is capped to 78% of the half-pane so the outermost seed still sits inside
+        // clampNodesToPanel's boundary; seeding past the clamp would just pin nodes to the edge,
+        // which is the failure 0078 measured from the other direction.
+        // ⚠️ Seed on an ELLIPSE matching the pane, not a circle. A circle is sized by the SHORTER
+        // side, so in the 600x500 pane the seeds only ever spanned 390 of 600 available px and the
+        // graph stayed narrow - measured 60% width fill against 91% height on the circular version.
+        const unpositioned = nodes.filter(function (n) { return !ns.hasLayoutPosition(n); });
+        const spreadX = Math.max(0, centreX * 0.78);
+        const spreadY = Math.max(0, centreY * 0.78);
+        const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+        let seedIndex = 0;
+
         let positioned = 0;
         nodes.forEach(function (node) {
             if (ns.hasLayoutPosition(node)) {
                 node.positionAnchored = false;
                 return;
             }
-            node.positionX = centreX;
-            node.positionY = centreY;
+            // sqrt spacing keeps the seeds at even AREA density rather than bunching at the centre
+            const t = unpositioned.length > 1
+                ? Math.sqrt(seedIndex / (unpositioned.length - 1))
+                : 0;
+            const theta = seedIndex * GOLDEN_ANGLE;
+            seedIndex += 1;
+            node.positionX = centreX + spreadX * t * Math.cos(theta);
+            node.positionY = centreY + spreadY * t * Math.sin(theta);
             // alpha-launch docs/issues/0171 — mark this as a FALLBACK anchor, not authored data.
             //
             // The comment above says these are anchored to the centre "letting the existing charge
@@ -470,9 +502,13 @@ window.Widgets.Panel.ForceGraph = {}
             panelUtilsNs.options.promoSim = true;
         }
 
+        // Logged with the radius because a clustered pane and a correctly-spread one look identical
+        // in the data - the only way to tell them apart afterwards is what the seeds were.
         console.log(
             `ForceGraph.applyLayout: anchored ${positioned} of ${nodes.length} promo node(s) ` +
-            `to ${Math.round(centreX)},${Math.round(centreY)}`
+            `around ${Math.round(centreX)},${Math.round(centreY)} on a golden-angle spiral, ` +
+            `radii <= ${Math.round(spreadX)}x${Math.round(spreadY)}px in a ${Math.round(panel.width)}x${Math.round(panel.height)} panel ` +
+            `(docs/issues/0198)`
         );
         return positioned;
     };

@@ -123,7 +123,26 @@ window.Widgets.Panel.Scratch = {}
                             .strength(20)
             ) 
             .force("charge", d3.forceManyBody().strength(-60)) // This adds repulsion (if it's negative) between nodes.
-            .force("center", d3.forceCenter(ns.options.width / 2, ns.options.height / 2)) // This force attracts nodes to the center of the svg area
+            // alpha-launch docs/issues/0198 — measure the panel; do NOT divide options.width.
+            //
+            // `ns.options.width`/`height` are the CSS strings "100%", so this read
+            // `d3.forceCenter("100%" / 2, "100%" / 2)` = **forceCenter(NaN, NaN)**, which is the
+            // exact defect panel.forcegraph.js documents at measurePanel(). A NaN centre does not
+            // centre anything: nothing pulls the nodes to the middle of the pane, so they settle
+            // wherever charge and the link force happen to leave them — measured as 4 nodes in a
+            // 200x157 clump in the top-right corner of a 598x498 pane (33%x32% fill).
+            //
+            // measurePanel() is the established fix for this in the Promotable pane; using it here
+            // keeps one helper rather than a second way of asking the same question.
+            .force("center", (function () {
+                const box = window.Widgets.Panel.ForceGraph.measurePanel("#scratch_panel svg");
+                console.log(
+                    `Scratch.simGraph: centring on ${Math.round(box.width / 2)},${Math.round(box.height / 2)} ` +
+                    `from a measured ${Math.round(box.width)}x${Math.round(box.height)} panel ` +
+                    `(was forceCenter(NaN, NaN) via options.width "${ns.options.width}" — docs/issues/0198)`
+                );
+                return d3.forceCenter(box.width / 2, box.height / 2);
+            })())
             /**
              * Keep Scratch nodes far enough apart that their LABELS are readable — docs/issues/0159.
              *
